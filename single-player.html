@@ -2970,6 +2970,10 @@ function handleJoystickStart(e) {
   joystick.startY = touch.clientY - rect.top;
   joystick.x = 0;
   joystick.y = 0;
+  document.addEventListener('touchmove', handleJoystickMove, { passive: false });
+  document.addEventListener('touchend', handleJoystickEnd);
+  document.addEventListener('mousemove', handleJoystickMove);
+  document.addEventListener('mouseup', handleJoystickEnd);
 }
 
 function handleJoystickMove(e) {
@@ -2998,15 +3002,15 @@ function handleJoystickEnd(e) {
   joystick.y = 0;
   joystickKnob.style.transform = 'translate(-50%, -50%)';
   keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
+  document.removeEventListener('touchmove', handleJoystickMove);
+  document.removeEventListener('touchend', handleJoystickEnd);
+  document.removeEventListener('mousemove', handleJoystickMove);
+  document.removeEventListener('mouseup', handleJoystickEnd);
 }
 
 joystickBg.addEventListener('mousedown', handleJoystickStart);
-joystickBg.addEventListener('mousemove', handleJoystickMove);
-joystickBg.addEventListener('mouseup', handleJoystickEnd);
-joystickBg.addEventListener('mouseleave', handleJoystickEnd);
 joystickBg.addEventListener('touchstart', handleJoystickStart);
-joystickBg.addEventListener('touchmove', handleJoystickMove);
-joystickBg.addEventListener('touchend', handleJoystickEnd);
+joystickBg.addEventListener('mouseleave', handleJoystickEnd);
 
 actionButton.addEventListener('click', attackTarget);
 actionButton.addEventListener('touchstart', (e) => { e.preventDefault(); attackTarget(); });
@@ -3016,7 +3020,7 @@ function updateJoystickMovement() {
     keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
     return;
   }
-  const threshold = 15;
+  const threshold = 8;
   if (joystick.y < -threshold) { keys['w'] = true; keys['s'] = false; keys['a'] = false; keys['d'] = false; }
   else if (joystick.y > threshold) { keys['s'] = true; keys['w'] = false; keys['a'] = false; keys['d'] = false; }
   else if (joystick.x < -threshold) { keys['a'] = true; keys['w'] = false; keys['s'] = false; keys['d'] = false; }
