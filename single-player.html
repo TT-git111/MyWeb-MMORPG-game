@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Kaetram - Single Player</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
-body{background:#000;overflow:hidden;font-family:'Courier New',monospace;user-select:none}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;user-select:none;font-size:14px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 #game-container{position:relative;width:100vw;height:100vh}
 canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:crisp-edges}
 #text-canvas{z-index:4;pointer-events:none}
@@ -19,25 +19,27 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 #ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none}
 #ui-layer>*{pointer-events:auto}
 #hotbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(0,0,0,0.7);border:2px solid #8B7355;padding:6px;border-radius:4px}
-.hotbar-slot{width:40px;height:40px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.hotbar-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .hotbar-slot:hover{border-color:#D4A574}
 .hotbar-slot .key{position:absolute;top:-14px;left:50%;transform:translateX(-50%);color:#FFD700;font-size:10px;font-weight:bold}
-#stats-bar{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:4px}
-.stat-row{display:flex;align-items:center;gap:6px}
-.stat-label{color:#fff;font-size:11px;width:60px;text-align:right}
-.stat-bar-outer{width:180px;height:14px;background:#222;border:1px solid #555;border-radius:2px;overflow:hidden}
+#stats-bar{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:6px}
+.stat-row{display:flex;align-items:center;gap:8px}
+.stat-label{color:#fff;font-size:12px;width:50px;text-align:right}
+.stat-bar-outer{width:150px;height:16px;background:#222;border:1px solid #555;border-radius:2px;overflow:hidden}
 .stat-bar-inner{height:100%;transition:width 0.3s}
 #hp-bar .stat-bar-inner{background:linear-gradient(180deg,#e74c3c,#c0392b)}
 #mana-bar .stat-bar-inner{background:linear-gradient(180deg,#3498db,#2980b9)}
 #xp-bar .stat-bar-inner{background:linear-gradient(180deg,#2ecc71,#27ae60)}
-.stat-text{color:#fff;font-size:10px;width:80px}
+.stat-text{color:#fff;font-size:12px;width:70px}
 #minimap{position:absolute;top:10px;right:10px;width:140px;height:140px;border:2px solid #8B7355;background:rgba(0,0,0,0.6);image-rendering:pixelated}
+#return-btn{position:absolute;top:155px;right:10px;width:140px;height:36px;background:linear-gradient(135deg,#2C1810,#3E2723);border:1px solid #8B7355;color:#D4A574;font-size:12px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;border-radius:3px;transition:all 0.2s;z-index:11}
+#return-btn:hover{background:rgba(139,115,85,0.5);color:#FFD700;border-color:#FFD700}
 #menu-buttons{position:absolute;top:10px;right:160px;display:flex;flex-direction:column;gap:3px}
-.menu-btn{width:120px;padding:6px 8px;background:rgba(0,0,0,0.7);border:1px solid #8B7355;color:#D4A574;font-size:11px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;transition:all 0.2s}
+.menu-btn{width:140px;height:48px;padding:10px 12px;background:rgba(0,0,0,0.7);border:1px solid #8B7355;color:#D4A574;font-size:14px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
 .menu-btn:hover{background:rgba(139,115,85,0.5);color:#FFD700;border-color:#FFD700}
 .menu-btn.active{background:rgba(255,215,0,0.3);border-color:#FFD700;color:#FFD700}
-#chat-box{position:absolute;bottom:80px;left:10px;width:350px;max-height:150px;overflow-y:auto;color:#fff;font-size:11px;background:rgba(0,0,0,0.5);border:1px solid #444;padding:4px 6px;border-radius:2px;pointer-events:none}
-#chat-box .msg{margin:2px 0}
+#chat-box{position:absolute;bottom:100px;left:10px;width:300px;max-height:120px;overflow-y:auto;color:#fff;font-size:12px;background:rgba(0,0,0,0.5);border:1px solid #444;padding:6px 8px;border-radius:2px;pointer-events:none}
+#chat-box .msg{margin:3px 0}
 #chat-box .damage{color:#e74c3c}
 #chat-box .heal{color:#2ecc71}
 #chat-box .xp{color:#f39c12}
@@ -46,17 +48,17 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 #chat-box .system{color:#95a5a6}
 #modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;z-index:20;justify-content:center;align-items:center}
 .modal{background:linear-gradient(135deg,#2C1810,#3E2723);border:3px solid #8B7355;border-radius:4px;padding:0;min-width:300px;max-width:600px;max-height:80vh;overflow:hidden;color:#D4A574}
-.modal-header{background:rgba(0,0,0,0.4);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B7355;font-size:13px;font-weight:bold;color:#FFD700}
+.modal-header{background:rgba(0,0,0,0.4);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B7355;font-size:16px;font-weight:bold;color:#FFD700}
 .modal-close{cursor:pointer;font-size:16px;color:#D4A574}
 .modal-close:hover{color:#e74c3c}
 .modal-body{padding:12px;overflow-y:auto;max-height:60vh}
-.inventory-grid{display:grid;grid-template-columns:repeat(5,50px);grid-template-rows:repeat(4,50px);gap:3px}
-.inv-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.inventory-grid{display:grid;grid-template-columns:repeat(5,56px);grid-template-rows:repeat(4,56px);gap:4px}
+.inv-slot{width:56px;height:56px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .inv-slot:hover{border-color:#D4A574;background:rgba(139,115,85,0.3)}
 .inv-slot canvas{position:absolute;top:2px;left:2px}
 .inv-slot .count{position:absolute;bottom:1px;right:3px;color:#FFD700;font-size:10px;font-weight:bold;text-shadow:1px 1px 0 #000}
 .equip-slots{display:flex;flex-direction:column;gap:4px;margin-right:8px}
-.equip-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.equip-slot{width:56px;height:56px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .equip-slot:hover{border-color:#D4A574}
 .equip-slot canvas{position:absolute}
 .equip-slot .label{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);color:#888;font-size:8px;white-space:nowrap}
@@ -75,15 +77,19 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 .dialog-box{position:absolute;bottom:50%;left:50%;transform:translate(-50%,50%);background:linear-gradient(135deg,#2C1810,#3E2723);border:3px solid #8B7355;border-radius:4px;padding:12px 16px;color:#D4A574;font-size:12px;min-width:250px;text-align:center;z-index:25}
 .dialog-box .speaker{color:#FFD700;font-weight:bold;margin-bottom:4px}
 .dialog-box .text{margin-bottom:8px}
-.dialog-box button{background:rgba(0,0,0,0.5);border:1px solid #8B7355;color:#D4A574;padding:4px 12px;margin:2px;cursor:pointer;font-family:'Courier New',monospace;font-size:11px}
+.dialog-box button{background:rgba(0,0,0,0.5);border:1px solid #8B7355;color:#D4A574;padding:10px 20px;margin:4px;cursor:pointer;font-family:'Courier New',monospace;font-size:14px;min-width:80px;height:44px}
 .dialog-box button:hover{background:rgba(139,115,85,0.5);color:#FFD700}
 
-/* --- GACHA STYLES --- */
-#gacha-btn{position:absolute;bottom:70px;right:10px;width:140px;padding:10px 8px;
+/* --- VIRTUAL JOYSTICK --- */
+#joystick-container{position:absolute;bottom:150px;left:20px;width:120px;height:120px;z-index:15;display:none}
+#joystick-bg{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;background:rgba(0,0,0,0.6);border:3px solid #5C4033}
+#joystick-knob{position:absolute;top:50%;left:50%;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#8B7355,#5C4033);border:2px solid #D4A574;transform:translate(-50%,-50%);touch-action:none}
+#action-button{position:absolute;bottom:150px;right:20px;width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#c0392b,#8B0000);border:3px solid #f1c40f;color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;z-index:15;display:none;box-shadow:0 0 20px rgba(231,76,60,0.5)}
+#gacha-btn{position:absolute;bottom:80px;right:10px;width:150px;height:56px;padding:12px 10px;
   background:linear-gradient(135deg,#8B0000,#4a0000);border:2px solid #f1c40f;color:#FFD700;
-  font-size:13px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;
-  border-radius:4px;transition:all 0.3s;z-index:11;font-weight:bold;letter-spacing:2px;
-  text-shadow:0 0 8px #f1c40f;animation:gachaGlow 1.5s ease-in-out infinite}
+  font-size:16px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;
+  border-radius:6px;transition:all 0.3s;z-index:11;font-weight:bold;letter-spacing:2px;
+  text-shadow:0 0 8px #f1c40f;animation:gachaGlow 1.5s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
 #gacha-btn:hover{background:linear-gradient(135deg,#c0392b,#7b0000);box-shadow:0 0 20px #f1c40f;transform:scale(1.05)}
 @keyframes gachaGlow{0%,100%{box-shadow:0 0 8px #f1c40f}50%{box-shadow:0 0 25px #f39c12}}
 .gacha-result-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;
@@ -114,7 +120,7 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 
 /* backpack tabs */
 .backpack-tabs{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:8px}
-.backpack-tab{padding:4px 10px;background:rgba(0,0,0,0.4);border:1px solid #5C4033;color:#888;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;border-radius:2px 2px 0 0;transition:all 0.2s}
+.backpack-tab{padding:8px 12px;background:rgba(0,0,0,0.4);border:1px solid #5C4033;color:#888;font-size:12px;cursor:pointer;font-family:'Courier New',monospace;border-radius:2px 2px 0 0;transition:all 0.2s;min-height:44px;display:flex;align-items:center}
 .backpack-tab:hover{color:#fff;border-color:#888}
 .backpack-tab.active{color:#FFD700;border-color:#FFD700;background:rgba(255,215,0,0.1)}
 .backpack-tab.fan{border-color:#8B7355}
@@ -124,8 +130,8 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 .backpack-tab.xian{border-color:#f39c12}
 .backpack-tab.shen{border-color:#e74c3c}
 .backpack-tab.sp{background:linear-gradient(90deg,#ff0,#f0f,#0ff,#f00,#ff0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.backpack-grid{display:grid;grid-template-columns:repeat(6,50px);gap:3px}
-.backpack-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.backpack-grid{display:grid;grid-template-columns:repeat(6,56px);gap:4px}
+.backpack-slot{width:56px;height:56px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .backpack-slot:hover{border-color:#D4A574}
 .backpack-slot canvas{position:absolute;top:2px;left:2px}
 .backpack-actions{display:flex;gap:4px;margin-top:8px}
@@ -141,6 +147,65 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 /* result particles floating */
 .gacha-sparkle{position:absolute;pointer-events:none;width:4px;height:4px;border-radius:50%;animation:sparkleFloat 2s ease-out forwards}
 @keyframes sparkleFloat{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(0);opacity:0}}
+
+/* ===== MOBILE LAYOUT (≤768px auto-detect) ===== */
+#mobile-toolbar{display:none}
+@media (max-width: 768px){
+  body{font-size:15px;overflow:hidden}
+  #game-container{position:relative;width:100vw;height:100vh;height:100dvh}
+  canvas{position:absolute !important;top:0 !important;left:0 !important}
+  #ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+  #ui-layer>*{pointer-events:auto}
+  /* stats compact top bar */
+  #stats-bar{position:fixed;top:0;left:0;right:0;flex-direction:row;gap:5px;padding:4px 6px;background:rgba(0,0,0,0.82);flex-wrap:wrap;justify-content:center;align-items:center;z-index:20}
+  .stat-row{gap:3px}
+  .stat-label{font-size:10px;width:24px;text-align:center}
+  .stat-bar-outer{width:58px;height:10px}
+  .stat-text{font-size:9px;width:48px}
+  /* minimap overlay */
+  #minimap{position:fixed;top:34px;right:6px;width:70px;height:70px;z-index:25;border:2px solid #8B7355}
+  #return-btn{position:fixed;top:108px;right:6px;width:70px;height:24px;font-size:9px;z-index:25;line-height:24px;padding:0}
+  /* chat overlay */
+  #chat-box{position:fixed;bottom:62px;left:0;width:100%;max-height:44px;font-size:10px;background:rgba(0,0,0,0.6);padding:3px 6px;z-index:12;pointer-events:none}
+  /* hotbar hidden */
+  #hotbar{display:none}
+  #menu-buttons{display:none !important}
+  #gacha-btn{display:none}
+  /* mobile toolbar */
+  #mobile-toolbar{display:flex !important;position:fixed;bottom:0;left:0;right:0;height:56px;background:rgba(0,0,0,0.92);border-top:2px solid #8B7355;z-index:20;justify-content:space-around;align-items:center;padding:0 2px;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .mobile-tool-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;width:48px;height:48px;background:rgba(0,0,0,0.4);border:1px solid #5C4033;border-radius:4px;color:#D4A574;font-size:18px;cursor:pointer;transition:all 0.15s;min-width:44px;min-height:44px;-webkit-tap-highlight-color:transparent}
+  .mobile-tool-btn span{font-size:7px;margin-top:1px;color:#aaa}
+  .mobile-tool-btn:active{background:rgba(255,215,0,0.2);border-color:#FFD700}
+  .mobile-tool-btn.gacha-mbtn{border-color:#f1c40f;background:rgba(139,0,0,0.3)}
+  /* joystick */
+  #joystick-container{position:fixed !important;bottom:70px;left:10px;width:96px;height:96px;display:block !important;z-index:30 !important;pointer-events:auto}
+  #joystick-knob{width:40px;height:40px}
+  #action-button{position:fixed !important;bottom:70px;right:10px;width:60px;height:60px;display:flex !important;font-size:24px;z-index:30 !important;pointer-events:auto}
+  /* modal fullscreen */
+  .modal{min-width:auto;width:96vw;max-width:96vw;max-height:82vh;border-radius:6px}
+  .modal-body{max-height:58vh}
+  .modal-header{font-size:15px;padding:8px 10px}
+  .modal-close{font-size:20px}
+  /* inventory compact */
+  .inventory-grid{grid-template-columns:repeat(5,42px);grid-template-rows:repeat(4,42px);gap:3px}
+  .inv-slot{width:42px;height:42px}
+  /* equip compact */
+  .equip-slot{width:42px;height:42px}
+  .equip-slot .label{font-size:7px;bottom:-11px}
+  /* backpack compact */
+  .backpack-grid{grid-template-columns:repeat(5,40px);gap:2px}
+  .backpack-slot{width:40px;height:40px}
+  .backpack-tab{padding:5px 7px;font-size:10px;min-height:36px}
+  /* dialog */
+  .dialog-box{min-width:auto;width:90vw;font-size:13px;padding:10px}
+  .dialog-box button{padding:10px 14px;font-size:13px;min-width:56px}
+  /* gacha result */
+  .gacha-result-card{min-width:auto;width:90vw;padding:12px}
+  /* skills */
+  .skill-name{font-size:10px;width:70px}
+  .skill-xp-bar{height:10px}
+  .skill-lvl{font-size:9px;width:24px}
+}
 </style>
 </head>
 <body>
@@ -152,6 +217,12 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
   <canvas id="text-canvas"></canvas>
   <canvas id="cursor"></canvas>
   <canvas id="overlay"></canvas>
+  <div id="joystick-container">
+    <div id="joystick-bg">
+      <div id="joystick-knob"></div>
+    </div>
+  </div>
+  <div id="action-button">⚔</div>
   <div id="ui-layer">
     <div id="stats-bar">
       <div class="stat-row" id="hp-bar"><span class="stat-label">HP</span><div class="stat-bar-outer"><div class="stat-bar-inner" style="width:100%"></div></div><span class="stat-text">100/100</span></div>
@@ -166,6 +237,7 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
       <button class="menu-btn" data-menu="gachabag" style="border-color:#f1c40f;color:#FFD700">🎰 装备背包</button>
     </div>
     <canvas id="minimap" width="140" height="140"></canvas>
+    <button id="return-btn">🏠 返回村庄</button>
     <div id="chat-box"></div>
     <div id="hotbar">
       <div class="hotbar-slot" data-slot="0"><span class="key">1</span></div>
@@ -178,6 +250,14 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
       <div class="hotbar-slot" data-slot="7"><span class="key">8</span></div>
     </div>
     <button id="gacha-btn">🎰 抽奖</button>
+    <div id="mobile-toolbar">
+      <button class="mobile-tool-btn" data-menu="inventory">🎒<span>物品</span></button>
+      <button class="mobile-tool-btn" data-menu="equipment">⚔<span>装备</span></button>
+      <button class="mobile-tool-btn" data-menu="skills">⭐<span>技能</span></button>
+      <button class="mobile-tool-btn" data-menu="quests">📜<span>任务</span></button>
+      <button class="mobile-tool-btn gacha-mbtn" data-menu="gachabag">🎰<span>抽装</span></button>
+      <button class="mobile-tool-btn" id="return-btn-m">🏠<span>回村</span></button>
+    </div>
   </div>
   <div id="dialog-box" class="dialog-box" style="display:none"></div>
   <div id="gacha-result-overlay" class="gacha-result-overlay"></div>
@@ -221,9 +301,11 @@ const ctxOverlay = canvasOverlay.getContext('2d');
 const ctxMini = minimap.getContext('2d');
 
 let screenW, screenH, canvasW, canvasH;
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth <= 768;
 let camera = { x: 0, y: 0 };
 let keys = {};
 let mouse = { x: 0, y: 0, down: false, rightDown: false };
+let joystick = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
 let selectedCell = null;
 let pathQueue = [];
 let gameTime = 0;
@@ -403,24 +485,59 @@ function itemSprite(type) {
 function treeSprite(type) {
   const key = 'tree_' + type;
   if (spriteCache[key]) return spriteCache[key];
-  const colors = { oak: ['#27ae60','#1e8449','#8B4513'], pine: ['#1e8449','#145a32','#6B3410'], palm: ['#2ecc71','#1e8449','#A0522D'], dead: ['#7f8c8d','#5d6d7e','#4a4a4a'] };
-  const [leaf, leafD, trunk] = colors[type] || colors.oak;
+  const colors = {
+    oak: { leaf: '#2d7a30', leafD: '#1e5c20', leafL: '#3a933d', trunk: '#6B4226', trunkL: '#7a4f30', bark: '#4a2c18', acorn: '#c4954a' },
+    pine: { leaf: '#1a5c24', leafD: '#0e3d18', leafL: '#237030', trunk: '#5C3317', trunkL: '#6e4020', bark: '#3a2010', acorn: '#a07030' },
+    palm: { leaf: '#2d7a30', leafD: '#1e5c20', leafL: '#3a933d', trunk: '#8B6914', trunkL: '#9e7a20', bark: '#6e5010', acorn: '#c8a040' },
+    dead: { leaf: '#8a7a6a', leafD: '#6e5e4e', leafL: '#9a8a7a', trunk: '#5a4a3a', trunkL: '#6e5a4a', bark: '#3a2a20', acorn: '#8a7a60' },
+  };
+  const { leaf, leafD, leafL, trunk, trunkL, bark, acorn } = colors[type] || colors.oak;
   const frames = {};
   ['idle','stump'].forEach((name, idx) => {
     const c = document.createElement('canvas');
     c.width = 32; c.height = 32;
     const ctx = c.getContext('2d');
     if (name === 'idle') {
-      rect(ctx,12,4,8,8,leaf);
-      rect(ctx,10,6,12,4,leafD);
-      rect(ctx,10,10,12,4,leafD);
-      rect(ctx,8,8,4,8,leaf);
-      rect(ctx,20,8,4,8,leaf);
-      rect(ctx,10,16,12,4,leaf);
-      rect(ctx,13,24,6,8,trunk);
+      // shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(10, 28, 12, 4);
+      // trunk
+      rect(ctx, 13, 18, 6, 12, trunk);
+      rect(ctx, 14, 18, 4, 12, trunkL);
+      rect(ctx, 12, 20, 1, 6, bark);
+      rect(ctx, 19, 22, 1, 5, bark);
+      // roots
+      rect(ctx, 10, 28, 3, 2, trunk);
+      rect(ctx, 19, 28, 3, 2, trunk);
+      // foliage - multiple layers for depth
+      rect(ctx, 6, 2, 20, 6, leafD);
+      rect(ctx, 7, 3, 18, 5, leaf);
+      rect(ctx, 8, 4, 8, 3, leafL);
+      rect(ctx, 17, 4, 7, 3, leafL);
+      rect(ctx, 4, 7, 24, 8, leafD);
+      rect(ctx, 5, 8, 22, 7, leaf);
+      rect(ctx, 6, 9, 8, 4, leafL);
+      rect(ctx, 18, 9, 7, 4, leafL);
+      rect(ctx, 3, 14, 26, 5, leafD);
+      rect(ctx, 4, 15, 24, 4, leaf);
+      rect(ctx, 7, 16, 22, 2, leafL);
+      // highlight dots on leaves
+      px(ctx, 8, 4, '#5ab85e');
+      px(ctx, 20, 5, '#5ab85e');
+      px(ctx, 5, 9, '#5ab85e');
+      px(ctx, 22, 10, '#5ab85e');
+      px(ctx, 10, 12, '#5ab85e');
+      px(ctx, 15, 16, '#5ab85e');
+      // tiny acorns/fruit
+      px(ctx, 9, 13, acorn);
+      px(ctx, 21, 13, acorn);
     } else {
-      rect(ctx,13,20,6,6,trunk);
-      rect(ctx,14,18,4,2,'#A0522D');
+      // stump
+      rect(ctx, 13, 20, 6, 8, trunk);
+      rect(ctx, 14, 20, 4, 8, trunkL);
+      rect(ctx, 12, 18, 8, 3, bark);
+      rect(ctx, 13, 18, 6, 2, leafD);
+      rect(ctx, 11, 19, 10, 2, trunk);
     }
     frames[name] = c;
   });
@@ -1004,17 +1121,17 @@ const QUESTS = {
 const TILE = { GRASS: 0, PATH: 1, SAND: 2, WATER: 3, DEEP_WATER: 4, WALL: 5, FLOOR: 6, DIRT: 7, FLOWER: 8, BRIDGE: 9, DOOR: 10 };
 
 const tileColors = {
-  [TILE.GRASS]: ['#4a8c3f','#3d7a33','#528e44','#45803a','#4c8a40'],
-  [TILE.PATH]: ['#c4a46c','#b8944c','#ccac74','#c09c5c','#c8a864'],
-  [TILE.SAND]: ['#e8d5a3','#e0cc96','#ecd9a8','#e4d09c','#e6d2a0'],
-  [TILE.WATER]: ['#3388cc','#2e7ab8','#3890d4','#3080c0','#3588c8'],
-  [TILE.DEEP_WATER]: ['#2266aa','#1e5c9a','#2470b2','#2060a0','#2268a8'],
-  [TILE.WALL]: ['#666666','#5a5a5a','#6e6e6e','#606060','#686868'],
-  [TILE.FLOOR]: ['#8B7355','#7d674c','#937b5d','#856d50','#8e7658'],
-  [TILE.DIRT]: ['#8B6914','#7d5e12','#937016','#856414','#8e6c14'],
-  [TILE.FLOWER]: ['#4a8c3f','#3d7a33','#528e44'],
-  [TILE.BRIDGE]: ['#A0522D','#8B4513','#A85a35','#964d1a','#a45530'],
-  [TILE.DOOR]: ['#8B4513','#A0522D','#6B3410'],
+  [TILE.GRASS]: ['#3d6e30','#356328','#457a36','#3a6a2d','#407032'],
+  [TILE.PATH]: ['#a68b54','#9a7f4c','#ae935c','#a28750','#aa8f58'],
+  [TILE.SAND]: ['#d4c08a','#c8b47e','#dcc892','#d0bc86','#d6c28e'],
+  [TILE.WATER]: ['#1a5c8a','#165580','#1e6290','#185888','#1c5e8c'],
+  [TILE.DEEP_WATER]: ['#0e3d6b','#0c3660','#104472','#0e3a66','#0f406e'],
+  [TILE.WALL]: ['#4a4a4a','#444444','#505050','#464646','#4c4c4c'],
+  [TILE.FLOOR]: ['#6B5335','#5f4a2f','#735b3d','#654e32','#6e5638'],
+  [TILE.DIRT]: ['#6e5010','#60470e','#765812','#664c10','#705212'],
+  [TILE.FLOWER]: ['#3a6830','#326028','#427238'],
+  [TILE.BRIDGE]: ['#8B4513','#7a3c10','#934d18','#834012','#8e4714'],
+  [TILE.DOOR]: ['#7a3c10','#8B4513','#5e2e0a'],
 };
 
 let mapData = [];
@@ -1026,30 +1143,91 @@ function seedRand(seed) {
   return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
 }
 
+function simplex2D(x, y) {
+  let n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+  return n - Math.floor(n);
+}
+
+function fbmNoise(x, y, seed) {
+  let val = 0, amp = 1.0, freq = 1.0, total = 0;
+  for (let i = 0; i < 4; i++) {
+    let sx = x * freq * 0.006 + seed * 127.1 + i * 31.7;
+    let sy = y * freq * 0.006 + seed * 311.7 + i * 47.3;
+    val += simplex2D(sx, sy) * amp;
+    total += amp;
+    amp *= 0.52;
+    freq *= 2.1;
+  }
+  return val / total;
+}
+
 function generateMap() {
   const rand = seedRand(12345);
   mapData = new Array(MAP_WIDTH * MAP_HEIGHT).fill(TILE.GRASS);
   mapCollision = new Array(MAP_WIDTH * MAP_HEIGHT).fill(false);
   mapHigh.clear();
 
-  for (let i = 0; i < MAP_WIDTH * MAP_HEIGHT; i++) {
-    let x = i % MAP_WIDTH, y = Math.floor(i / MAP_WIDTH);
-    let n = (Math.sin(x * 0.3) * Math.cos(y * 0.3) + Math.sin(x * 0.1 + y * 0.1) * 0.5 + 0.5);
-    let r = rand();
-
-    if (n > 0.85 && r < 0.3) mapData[i] = TILE.WATER;
-    else if (n > 0.78 && r < 0.2) mapData[i] = TILE.DEEP_WATER;
-    else if (n < 0.15 && r < 0.25) mapData[i] = TILE.SAND;
-    else if (r < 0.02) mapData[i] = Math.random() < 0.5 ? TILE.FLOWER : TILE.DIRT;
-    else mapData[i] = TILE.GRASS;
-
-    if (mapData[i] === TILE.WATER || mapData[i] === TILE.DEEP_WATER) {
-      mapCollision[i] = true;
-      mapHigh.add(i);
+  // elevation-based terrain using FBM noise
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      const i = y * MAP_WIDTH + x;
+      const elev = fbmNoise(x, y, 12345);
+      if (elev < -0.18) {
+        mapData[i] = TILE.DEEP_WATER; mapCollision[i] = true; mapHigh.add(i);
+      } else if (elev < 0.05) {
+        mapData[i] = TILE.WATER; mapCollision[i] = true; mapHigh.add(i);
+      } else if (elev < 0.12) {
+        mapData[i] = TILE.SAND;
+      } else if (elev < 0.55) {
+        mapData[i] = TILE.GRASS;
+        if (rand() < 0.04) mapData[i] = TILE.FLOWER;
+      } else {
+        mapData[i] = (rand() < 0.5) ? TILE.GRASS : TILE.DIRT;
+      }
     }
   }
 
-  // village area
+  // remove isolated water tiles (require at least 3 water neighbors)
+  for (let pass = 0; pass < 2; pass++) {
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = 0; x < MAP_WIDTH; x++) {
+        const i = y * MAP_WIDTH + x;
+        if (mapData[i] !== TILE.WATER && mapData[i] !== TILE.DEEP_WATER) continue;
+        let wc = 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
+            const t = mapData[ny * MAP_WIDTH + nx];
+            if (t === TILE.WATER || t === TILE.DEEP_WATER) wc++;
+          }
+        if (wc < 2) {
+          mapData[i] = TILE.SAND; mapCollision[i] = false; mapHigh.delete(i);
+        }
+      }
+    }
+  }
+
+  // shore blending: grass adjacent to water gets sand rim
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      const i = y * MAP_WIDTH + x;
+      if (mapData[i] !== TILE.GRASS) continue;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
+          const nt = mapData[ny * MAP_WIDTH + nx];
+          if (nt === TILE.WATER || nt === TILE.DEEP_WATER) {
+            mapData[i] = TILE.SAND;
+            break;
+          }
+        }
+    }
+  }
+
+  // village area on a plateau
   const vx = 35, vy = 40, vw = 12, vh = 8;
   for (let dy = 0; dy < vh; dy++)
     for (let dx = 0; dx < vw; dx++) {
@@ -1064,20 +1242,17 @@ function generateMap() {
       }
     }
 
-  // village exits - decorative doors in walls (2 tiles wide, wooden)
+  // village exits
   const gates = [
-    { x: vx + 5, y: vy + vh - 1 },  // south exit (left door)
-    { x: vx + 6, y: vy + vh - 1 },  // south exit (right door)
-    { x: vx, y: vy + 3 },           // west exit (upper door)
-    { x: vx, y: vy + 4 },           // west exit (lower door)
+    { x: vx + 5, y: vy + vh - 1 },
+    { x: vx + 6, y: vy + vh - 1 },
+    { x: vx, y: vy + 3 },
+    { x: vx, y: vy + 4 },
   ];
   gates.forEach(g => {
     const i = g.y * MAP_WIDTH + g.x;
-    mapData[i] = TILE.DOOR;
-    mapCollision[i] = false;
-    mapHigh.delete(i);
+    mapData[i] = TILE.DOOR; mapCollision[i] = false; mapHigh.delete(i);
   });
-  // add torch posts beside doors for decoration
   const torchSpots = [
     { x: vx + 4, y: vy + vh - 1 }, { x: vx + 7, y: vy + vh - 1 },
     { x: vx + 1, y: vy + 3 }, { x: vx + 1, y: vy + 4 },
@@ -1085,18 +1260,23 @@ function generateMap() {
   torchSpots.forEach(t => {
     const i = t.y * MAP_WIDTH + t.x;
     if (mapData[i] === TILE.WALL) {
-      mapData[i] = TILE.FLOOR; // lighter pillar
-      mapCollision[i] = false;
-      mapHigh.delete(i);
+      mapData[i] = TILE.FLOOR; mapCollision[i] = false; mapHigh.delete(i);
     }
   });
 
-  // paths
+  // paths - carve through terrain
   function drawPath(x1, y1, x2, y2) {
     let x = x1, y = y1;
     while (x !== x2 || y !== y2) {
-      const i = y * MAP_WIDTH + x;
-      if (!mapCollision[i]) mapData[i] = TILE.PATH;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
+          const i = ny * MAP_WIDTH + nx;
+          if (mapData[i] !== TILE.WALL && mapData[i] !== TILE.DOOR) {
+            mapData[i] = TILE.PATH; mapCollision[i] = false; mapHigh.delete(i);
+          }
+        }
       if (Math.abs(x - x2) > Math.abs(y - y2)) x += x < x2 ? 1 : -1;
       else y += y < y2 ? 1 : -1;
     }
@@ -1114,19 +1294,12 @@ function generateMap() {
     for (let dx2 = 0; dx2 < dw; dx2++) {
       const i = (dy + dy2) * MAP_WIDTH + (dx + dx2);
       if (dy2 === 0 || dy2 === dh - 1 || dx2 === 0 || dx2 === dw - 1) {
-        mapData[i] = TILE.WALL;
-        mapCollision[i] = true;
-        mapHigh.add(i);
+        mapData[i] = TILE.WALL; mapCollision[i] = true; mapHigh.add(i);
       } else {
-        mapData[i] = TILE.FLOOR;
-        mapCollision[i] = false;
+        mapData[i] = TILE.FLOOR; mapCollision[i] = false;
       }
     }
-  // dungeon entrance
-  {
-    const ei = dy * MAP_WIDTH + (dx + 5);
-    mapData[ei] = TILE.FLOOR; mapCollision[ei] = false; mapHigh.delete(ei);
-  }
+  { const ei = dy * MAP_WIDTH + (dx + 5); mapData[ei] = TILE.FLOOR; mapCollision[ei] = false; mapHigh.delete(ei); }
 }
 
 // ==================== ENTITIES ====================
@@ -1299,13 +1472,31 @@ function spawnResources() {
 function resizeCanvases() {
   screenW = window.innerWidth;
   screenH = window.innerHeight;
-  const gridW = Math.ceil(screenW / TILE_SIZE / ZOOM) + 4;
-  const gridH = Math.ceil(screenH / TILE_SIZE / ZOOM) + 4;
-  canvasW = Math.ceil(gridW * TILE_SIZE * ZOOM);
-  canvasH = Math.ceil(gridH * TILE_SIZE * ZOOM);
-  [canvasBg, canvasFg, canvasEnt, canvasEntF, canvasText, canvasCursor, canvasOverlay].forEach(c => {
-    c.width = canvasW; c.height = canvasH; c.style.width = screenW + 'px'; c.style.height = screenH + 'px';
-  });
+
+  if (isMobile) {
+    canvasW = Math.ceil((screenW / ZOOM) + 4 * TILE_SIZE) * ZOOM;
+    canvasH = Math.ceil((screenH / ZOOM) + 4 * TILE_SIZE) * ZOOM;
+    [canvasBg, canvasFg, canvasEnt, canvasEntF, canvasText, canvasCursor, canvasOverlay].forEach(c => {
+      c.width = canvasW; c.height = canvasH;
+      c.style.width = screenW + 'px'; c.style.height = screenH + 'px';
+      c.style.left = '0px'; c.style.top = '0px';
+    });
+  } else {
+    const aspectRatio = 4 / 3;
+    let displayW = screenW;
+    let displayH = screenW / aspectRatio;
+    if (displayH > screenH) { displayH = screenH; displayW = screenH * aspectRatio; }
+    const gridW = Math.ceil(displayW / TILE_SIZE / ZOOM) + 4;
+    const gridH = Math.ceil(displayH / TILE_SIZE / ZOOM) + 4;
+    canvasW = Math.ceil(gridW * TILE_SIZE * ZOOM);
+    canvasH = Math.ceil(gridH * TILE_SIZE * ZOOM);
+    [canvasBg, canvasFg, canvasEnt, canvasEntF, canvasText, canvasCursor, canvasOverlay].forEach(c => {
+      c.width = canvasW; c.height = canvasH;
+      c.style.width = displayW + 'px'; c.style.height = displayH + 'px';
+      c.style.left = ((screenW - displayW) / 2) + 'px';
+      c.style.top = ((screenH - displayH) / 2) + 'px';
+    });
+  }
   [ctxBg, ctxFg, ctxEnt, ctxEntF, ctxText, ctxCursor, ctxOverlay].forEach(ctx => {
     ctx.imageSmoothingEnabled = false;
   });
@@ -1327,24 +1518,134 @@ function drawTileMap() {
   for (let y = startY; y < endY; y++) {
     for (let x = startX; x < endX; x++) {
       if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) continue;
-      const tile = mapData[y * MAP_WIDTH + x];
+      const idx = y * MAP_WIDTH + x;
+      const tile = mapData[idx];
       const cols = tileColors[tile] || tileColors[TILE.GRASS];
       const color = cols[Math.floor(Math.abs(x * 7 + y * 13) % cols.length)];
       const dx = x * TILE_SIZE, dy = y * TILE_SIZE;
-      const ctx2 = mapHigh.has(y * MAP_WIDTH + x) ? ctxFg : ctxBg;
+      const ctx2 = mapHigh.has(idx) ? ctxFg : ctxBg;
+
       ctx2.fillStyle = color;
       ctx2.fillRect(dx * ZOOM, dy * ZOOM, TILE_SIZE * ZOOM + 1, TILE_SIZE * ZOOM + 1);
-      if (tile === TILE.FLOWER) {
-        ctx2.fillStyle = '#e74c3c';
-        ctx2.fillRect((dx + 6) * ZOOM, (dy + 4) * ZOOM, 4 * ZOOM, 4 * ZOOM);
+
+      // Per-tile texture detail
+      const seed = x * 374761393 + y * 668265263;
+      const rnd = (n) => { let h = (seed + n * 1274126177) & 0x7fffffff; return h / 0x7fffffff; };
+
+      if (tile === TILE.GRASS) {
+        // darker grass patches
+        for (let i = 0; i < 6; i++) {
+          let px = 2 + Math.floor(rnd(i * 3) * 12);
+          let py = 2 + Math.floor(rnd(i * 3 + 1) * 12);
+          let pw = 1 + Math.floor(rnd(i * 3 + 2) * 3);
+          let ph = 1 + Math.floor(rnd(i * 7) * 3);
+          ctx2.fillStyle = (rnd(i + 100) < 0.5) ? '#356328' : '#457a36';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, pw * ZOOM, ph * ZOOM);
+        }
+        // lighter grass highlights
+        for (let i = 0; i < 4; i++) {
+          let px = 2 + Math.floor(rnd(i * 5 + 50) * 12);
+          let py = 2 + Math.floor(rnd(i * 5 + 51) * 12);
+          ctx2.fillStyle = '#4a8a40';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 2 * ZOOM, 1 * ZOOM);
+        }
+        // grass blade tips
+        for (let i = 0; i < 3; i++) {
+          let px = 3 + Math.floor(rnd(i * 7 + 200) * 11);
+          let py = 2 + Math.floor(rnd(i * 7 + 201) * 10);
+          ctx2.fillStyle = '#5aaa50';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 1 * ZOOM, 2 * ZOOM);
+        }
+      } else if (tile === TILE.SAND) {
+        // grain texture dots
+        for (let i = 0; i < 12; i++) {
+          let px = 1 + Math.floor(rnd(i * 4) * 14);
+          let py = 1 + Math.floor(rnd(i * 4 + 1) * 14);
+          ctx2.fillStyle = (rnd(i + 50) < 0.5) ? '#c8b47e' : '#dcc892';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 1 * ZOOM, 1 * ZOOM);
+        }
+        // slightly larger grain patches
+        for (let i = 0; i < 4; i++) {
+          let px = 2 + Math.floor(rnd(i * 6 + 80) * 12);
+          let py = 2 + Math.floor(rnd(i * 6 + 81) * 12);
+          ctx2.fillStyle = (rnd(i + 90) < 0.5) ? '#b89a60' : '#d8c898';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 2 * ZOOM, 2 * ZOOM);
+        }
+      } else if (tile === TILE.WATER) {
+        // wave lines
+        for (let i = 0; i < 5; i++) {
+          let wy = 2 + i * 3;
+          let wx = 1 + Math.floor(rnd(i * 9) * 3);
+          ctx2.fillStyle = 'rgba(255,255,255,0.12)';
+          ctx2.fillRect((dx + wx) * ZOOM, (dy + wy) * ZOOM, 13 * ZOOM, 1 * ZOOM);
+        }
+        // deeper water speckles
+        for (let i = 0; i < 4; i++) {
+          let px = 2 + Math.floor(rnd(i * 5 + 30) * 12);
+          let py = 2 + Math.floor(rnd(i * 5 + 31) * 12);
+          ctx2.fillStyle = '#165580';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 2 * ZOOM, 1 * ZOOM);
+        }
+        // shore gradient toward sand neighbors
+        for (let sy = -1; sy <= 1; sy++)
+          for (let sx = -1; sx <= 1; sx++) {
+            const nx = x + sx, ny = y + sy;
+            if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
+            if (mapData[ny * MAP_WIDTH + nx] === TILE.SAND) {
+              ctx2.fillStyle = 'rgba(212,192,138,0.3)';
+              let edgeX = sx === -1 ? 0 : sx === 1 ? 12 : 0;
+              let edgeY = sy === -1 ? 0 : sy === 1 ? 12 : 0;
+              let ew = sx !== 0 ? 4 : 16;
+              let eh = sy !== 0 ? 4 : 16;
+              ctx2.fillRect((dx + edgeX) * ZOOM, (dy + edgeY) * ZOOM, ew * ZOOM, eh * ZOOM);
+            }
+          }
+      } else if (tile === TILE.DEEP_WATER) {
+        // dark wave lines
+        for (let i = 0; i < 3; i++) {
+          let wy = 4 + i * 5;
+          ctx2.fillStyle = 'rgba(255,255,255,0.07)';
+          ctx2.fillRect((dx + 1) * ZOOM, (dy + wy) * ZOOM, 14 * ZOOM, 1 * ZOOM);
+        }
+      } else if (tile === TILE.DIRT) {
+        // soil texture
+        for (let i = 0; i < 6; i++) {
+          let px = 2 + Math.floor(rnd(i * 3) * 12);
+          let py = 2 + Math.floor(rnd(i * 3 + 1) * 12);
+          ctx2.fillStyle = (rnd(i + 30) < 0.5) ? '#60470e' : '#765812';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 2 * ZOOM, 2 * ZOOM);
+        }
+        // small rocks
+        for (let i = 0; i < 2; i++) {
+          let px = 3 + Math.floor(rnd(i * 7 + 60) * 11);
+          let py = 5 + Math.floor(rnd(i * 7 + 61) * 8);
+          ctx2.fillStyle = '#8a8a8a';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 2 * ZOOM, 1 * ZOOM);
+        }
+      } else if (tile === TILE.PATH) {
+        // cobblestone noise
+        for (let i = 0; i < 7; i++) {
+          let px = 1 + Math.floor(rnd(i * 4) * 13);
+          let py = 1 + Math.floor(rnd(i * 4 + 1) * 13);
+          ctx2.fillStyle = (rnd(i + 40) < 0.5) ? '#9a7f4c' : '#ae935c';
+          ctx2.fillRect((dx + px) * ZOOM, (dy + py) * ZOOM, 3 * ZOOM, 2 * ZOOM);
+        }
+      } else if (tile === TILE.FLOWER) {
+        ctx2.fillStyle = '#cc3344';
+        ctx2.fillRect((dx + 6) * ZOOM, (dy + 3) * ZOOM, 4 * ZOOM, 4 * ZOOM);
         ctx2.fillStyle = '#f1c40f';
-        ctx2.fillRect((dx + 7) * ZOOM, (dy + 5) * ZOOM, 2 * ZOOM, 2 * ZOOM);
+        ctx2.fillRect((dx + 7) * ZOOM, (dy + 4) * ZOOM, 2 * ZOOM, 2 * ZOOM);
+        // tiny grass around flower
+        ctx2.fillStyle = '#457a36';
+        ctx2.fillRect((dx + 4) * ZOOM, (dy + 8) * ZOOM, 2 * ZOOM, 1 * ZOOM);
+        ctx2.fillRect((dx + 10) * ZOOM, (dy + 6) * ZOOM, 2 * ZOOM, 1 * ZOOM);
+      } else if (tile === TILE.FLOOR) {
+        // wood plank lines
+        ctx2.fillStyle = '#5f4a2f';
+        ctx2.fillRect((dx + 1) * ZOOM, (dy + 4) * ZOOM, 14 * ZOOM, 1 * ZOOM);
+        ctx2.fillRect((dx + 1) * ZOOM, (dy + 11) * ZOOM, 14 * ZOOM, 1 * ZOOM);
       }
-      if (tile === TILE.DIRT) {
-        ctx2.fillStyle = '#6B3410';
-        ctx2.fillRect((dx + 2) * ZOOM, (dy + 4) * ZOOM, 3 * ZOOM, 2 * ZOOM);
-        ctx2.fillRect((dx + 8) * ZOOM, (dy + 8) * ZOOM, 4 * ZOOM, 2 * ZOOM);
-      }
+
       if (tile === TILE.DOOR) {
         ctx2.fillStyle = '#6B3410';
         ctx2.fillRect(dx * ZOOM, dy * ZOOM, TILE_SIZE * ZOOM + 1, TILE_SIZE * ZOOM + 1);
@@ -1353,15 +1654,13 @@ function drawTileMap() {
         ctx2.fillRect((dx + 2) * ZOOM, (dy + 1) * ZOOM, 12 * ZOOM, 14 * ZOOM);
         ctx2.fillStyle = '#A0522D';
         ctx2.fillRect((dx + 4) * ZOOM, (dy + 2) * ZOOM, 8 * ZOOM, 12 * ZOOM);
-        ctx2.fillStyle = '#D4A574'; // door knob
+        ctx2.fillStyle = '#D4A574';
         ctx2.fillRect((dx + 11) * ZOOM, (dy + 7) * ZOOM, 2 * ZOOM, 2 * ZOOM);
         ctx2.fillStyle = '#8B4513';
         ctx2.fillRect((dx + 2) * ZOOM, (dy + 1) * ZOOM, 12 * ZOOM, 2 * ZOOM);
         ctx2.fillRect((dx + 2) * ZOOM, (dy + 13) * ZOOM, 12 * ZOOM, 2 * ZOOM);
-        // left and right frame posts
         ctx2.fillRect((dx + 1) * ZOOM, (dy + 1) * ZOOM, 2 * ZOOM, 14 * ZOOM);
         ctx2.fillRect((dx + 13) * ZOOM, (dy + 1) * ZOOM, 2 * ZOOM, 14 * ZOOM);
-        // hinge marks
         ctx2.fillStyle = '#5C4033';
         ctx2.fillRect((dx + 3) * ZOOM, (dy + 4) * ZOOM, 1 * ZOOM, 2 * ZOOM);
         ctx2.fillRect((dx + 3) * ZOOM, (dy + 10) * ZOOM, 1 * ZOOM, 2 * ZOOM);
@@ -1552,12 +1851,12 @@ function drawMinimap() {
   for (let i = 0; i < MAP_WIDTH * MAP_HEIGHT; i++) {
     const x = (i % MAP_WIDTH) * scaleX, y = Math.floor(i / MAP_WIDTH) * scaleY;
     const t = mapData[i];
-    if (t === TILE.WATER || t === TILE.DEEP_WATER) ctxMini.fillStyle = '#3388cc';
-    else if (t === TILE.SAND) ctxMini.fillStyle = '#e8d5a3';
-    else if (t === TILE.WALL || t === TILE.FLOOR) ctxMini.fillStyle = '#8B7355';
-    else if (t === TILE.PATH) ctxMini.fillStyle = '#c4a46c';
+    if (t === TILE.WATER || t === TILE.DEEP_WATER) ctxMini.fillStyle = '#1a5c8a';
+    else if (t === TILE.SAND) ctxMini.fillStyle = '#d4c08a';
+    else if (t === TILE.WALL || t === TILE.FLOOR) ctxMini.fillStyle = '#6B5335';
+    else if (t === TILE.PATH) ctxMini.fillStyle = '#a68b54';
     else if (t === TILE.DOOR) ctxMini.fillStyle = '#A0522D';
-    else ctxMini.fillStyle = '#4a8c3f';
+    else ctxMini.fillStyle = '#3d6e30';
     ctxMini.fillRect(x, y, Math.ceil(scaleX), Math.ceil(scaleY));
   }
   // player dot
@@ -1596,7 +1895,7 @@ function updatePlayer(dt) {
   if (dx !== 0 || dy !== 0) {
     moving = true;
     if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
-    const speed = 2.5;
+    const speed = 1.25;
     const nx = player.x + dx * speed;
     const ny = player.y + dy * speed;
     if (!isCollidingWorld(nx, ny, 8, 10)) {
@@ -1618,7 +1917,7 @@ function updatePlayer(dt) {
     if (dist < 4) {
       pathQueue.shift();
     } else {
-      const speed = 2.5;
+      const speed = 1.25;
       const nx = player.x + (tdx / dist) * speed;
       const ny = player.y + (tdy / dist) * speed;
       if (!isCollidingWorld(nx, ny, 8, 10)) {
@@ -1687,7 +1986,7 @@ function updateMobs(dt) {
     const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
 
     if (!player.dead && pDist < m.aggroRange * TILE_SIZE && pDist > 10) {
-      const speed = 1.8;
+      const speed = 0.5;
       const nx = m.x + (pdx / pDist) * speed;
       const ny = m.y + (pdy / pDist) * speed;
       if (!isCollidingWorld(nx, ny, 8, 8) && !isNearOtherMob(m, nx, ny)) {
@@ -2404,21 +2703,59 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
 document.getElementById('game-container').addEventListener('mousemove', (e) => {
-  const rect = e.target.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
+  const rect = canvasBg.getBoundingClientRect();
+  const scaleX = canvasBg.width / rect.width;
+  const scaleY = canvasBg.height / rect.height;
+  mouse.x = (e.clientX - rect.left) * scaleX;
+  mouse.y = (e.clientY - rect.top) * scaleY;
+});
+const updateTouchPos = (e) => {
+  const touch = e.touches ? e.touches[0] : e.changedTouches[0];
+  if (!touch) return;
+  const rect = canvasBg.getBoundingClientRect();
+  const scaleX = canvasBg.width / rect.width;
+  const scaleY = canvasBg.height / rect.height;
+  mouse.x = (touch.clientX - rect.left) * scaleX;
+  mouse.y = (touch.clientY - rect.top) * scaleY;
+};
+document.getElementById('game-container').addEventListener('touchstart', (e) => {
+  updateTouchPos(e);
+  mouse.down = true;
+  handleClick();
+}, { passive: false });
+document.getElementById('game-container').addEventListener('touchmove', (e) => {
+  updateTouchPos(e);
+}, { passive: false });
+document.getElementById('game-container').addEventListener('touchend', (e) => {
+  updateTouchPos(e);
+  mouse.down = false;
 });
 document.getElementById('game-container').addEventListener('mousedown', (e) => {
+  const rect = canvasBg.getBoundingClientRect();
+  const scaleX = canvasBg.width / rect.width;
+  const scaleY = canvasBg.height / rect.height;
+  mouse.x = (e.clientX - rect.left) * scaleX;
+  mouse.y = (e.clientY - rect.top) * scaleY;
   if (e.button === 0) { mouse.down = true; handleClick(); }
   if (e.button === 2) { mouse.rightDown = true; }
 });
 document.getElementById('game-container').addEventListener('mouseup', (e) => {
+  const rect = canvasBg.getBoundingClientRect();
+  const scaleX = canvasBg.width / rect.width;
+  const scaleY = canvasBg.height / rect.height;
+  mouse.x = (e.clientX - rect.left) * scaleX;
+  mouse.y = (e.clientY - rect.top) * scaleY;
   mouse.down = false; mouse.rightDown = false;
 });
 document.getElementById('game-container').addEventListener('contextmenu', (e) => {
   e.preventDefault();
-  const wx = mouse.x / ZOOM + camera.x;
-  const wy = mouse.y / ZOOM + camera.y;
+  const rect = canvasBg.getBoundingClientRect();
+  const scaleX = canvasBg.width / rect.width;
+  const scaleY = canvasBg.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const wx = mx / ZOOM + camera.x;
+  const wy = my / ZOOM + camera.y;
   const gx = Math.floor(wx / TILE_SIZE), gy = Math.floor(wy / TILE_SIZE);
   pathQueue = [{ x: gx * TILE_SIZE + 8, y: gy * TILE_SIZE + 8 }];
 });
@@ -2491,6 +2828,8 @@ function gameLoop(timestamp) {
   gameTime += dt;
   animFrame = Math.floor(gameTime / 150);
 
+  updateJoystickMovement();
+
   if (!player.dead) {
     updatePlayer(dt);
   } else {
@@ -2520,26 +2859,49 @@ function gameLoop(timestamp) {
 // ==================== INITIALIZATION ====================
 function init() {
   resizeCanvases();
-  generateMap();
-  spawnMobs();
-  spawnNPCs();
-  spawnResources();
-
-  // give starter items
+  
   player.gachaEquips = {};
-  addToInventory('sword_bronze', 1);
-  addToInventory('shield_wood', 1);
-  addToInventory('potion_hp', 5);
-  addToInventory('bread', 3);
-  player.equipment.weapon = 'sword_bronze';
-  player.equipment.shield = 'shield_wood';
-  addChatMsg('{system}欢迎来到 Kaetram 单机版！');
-  addChatMsg('{system}WASD 移动 | 鼠标点击攻击/移动 | E 交互 | I 背包 | 右键移动');
-  addChatMsg('{system}寻找村长开始你的冒险吧！');
-  updateHotbar();
-  drawMinimap();
-
-  requestAnimationFrame(gameLoop);
+  
+  const loadingSteps = [
+    { name: 'map', fn: () => generateMap(), weight: 30 },
+    { name: 'npcs', fn: () => spawnNPCs(), weight: 10 },
+    { name: 'resources', fn: () => spawnResources(), weight: 30 },
+    { name: 'mobs', fn: () => spawnMobs(), weight: 30 },
+  ];
+  
+  let stepIndex = 0;
+  let totalWeight = loadingSteps.reduce((sum, s) => sum + s.weight, 0);
+  
+  function loadNextStep() {
+    if (stepIndex >= loadingSteps.length) {
+      finishInit();
+      return;
+    }
+    
+    const step = loadingSteps[stepIndex];
+    step.fn();
+    stepIndex++;
+    
+    requestAnimationFrame(loadNextStep);
+  }
+  
+  function finishInit() {
+    addToInventory('sword_bronze', 1);
+    addToInventory('shield_wood', 1);
+    addToInventory('potion_hp', 5);
+    addToInventory('bread', 3);
+    player.equipment.weapon = 'sword_bronze';
+    player.equipment.shield = 'shield_wood';
+    addChatMsg('{system}欢迎来到 Kaetram 单机版！');
+    addChatMsg('{system}WASD 移动 | 鼠标点击攻击/移动 | E 交互 | I 背包 | 右键移动');
+    addChatMsg('{system}寻找村长开始你的冒险吧！');
+    updateHotbar();
+    drawMinimap();
+    
+    requestAnimationFrame(gameLoop);
+  }
+  
+  requestAnimationFrame(loadNextStep);
 }
 
 // UI event listeners
@@ -2557,6 +2919,35 @@ document.querySelectorAll('.menu-btn').forEach(btn => {
 });
 
 document.getElementById('gacha-btn').addEventListener('click', doGachaDraw);
+document.getElementById('return-btn').addEventListener('click', () => {
+  pathQueue = [];
+  player.x = 41 * TILE_SIZE;
+  player.y = 44 * TILE_SIZE;
+  player.gridX = 41; player.gridY = 44;
+  camera.x = player.x + 8 - screenW / 2 / ZOOM;
+  camera.y = player.y + 10 - screenH / 2 / ZOOM;
+  addChatMsg('{system}你已传送回村庄！');
+});
+document.getElementById('return-btn-m').addEventListener('click', () => {
+  pathQueue = [];
+  player.x = 41 * TILE_SIZE;
+  player.y = 44 * TILE_SIZE;
+  player.gridX = 41; player.gridY = 44;
+  camera.x = player.x + 8 - screenW / 2 / ZOOM;
+  camera.y = player.y + 10 - screenH / 2 / ZOOM;
+  addChatMsg('{system}你已传送回村庄！');
+});
+document.getElementById('mobile-toolbar').querySelectorAll('.mobile-tool-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const menu = btn.dataset.menu;
+    if (!menu) return;
+    if (menu === 'inventory') showInventory();
+    else if (menu === 'equipment') showEquipment();
+    else if (menu === 'skills') showSkills();
+    else if (menu === 'quests') showQuests();
+    else if (menu === 'gachabag') showGachaBackpack();
+  });
+});
 document.getElementById('gacha-result-overlay').addEventListener('click', function(e) {
   if (e.target === this) hideGachaResult();
 });
@@ -2564,6 +2955,71 @@ document.getElementById('gacha-result-overlay').addEventListener('click', functi
 window.addEventListener('resize', () => {
   resizeCanvases();
 });
+
+// Virtual Joystick
+const joystickBg = document.getElementById('joystick-bg');
+const joystickKnob = document.getElementById('joystick-knob');
+const actionButton = document.getElementById('action-button');
+
+function handleJoystickStart(e) {
+  e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+  const rect = joystickBg.getBoundingClientRect();
+  joystick.active = true;
+  joystick.startX = touch.clientX - rect.left;
+  joystick.startY = touch.clientY - rect.top;
+  joystick.x = 0;
+  joystick.y = 0;
+}
+
+function handleJoystickMove(e) {
+  if (!joystick.active) return;
+  e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+  const rect = joystickBg.getBoundingClientRect();
+  const dx = touch.clientX - rect.left - joystick.startX;
+  const dy = touch.clientY - rect.top - joystick.startY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const maxDist = 45;
+  if (dist > maxDist) {
+    joystick.x = (dx / dist) * maxDist;
+    joystick.y = (dy / dist) * maxDist;
+  } else {
+    joystick.x = dx;
+    joystick.y = dy;
+  }
+  joystickKnob.style.transform = `translate(${joystick.x - 25}px, ${joystick.y - 25}px)`;
+}
+
+function handleJoystickEnd(e) {
+  e.preventDefault();
+  joystick.active = false;
+  joystick.x = 0;
+  joystick.y = 0;
+  joystickKnob.style.transform = 'translate(-50%, -50%)';
+}
+
+joystickBg.addEventListener('mousedown', handleJoystickStart);
+joystickBg.addEventListener('mousemove', handleJoystickMove);
+joystickBg.addEventListener('mouseup', handleJoystickEnd);
+joystickBg.addEventListener('mouseleave', handleJoystickEnd);
+joystickBg.addEventListener('touchstart', handleJoystickStart);
+joystickBg.addEventListener('touchmove', handleJoystickMove);
+joystickBg.addEventListener('touchend', handleJoystickEnd);
+
+actionButton.addEventListener('click', attackTarget);
+actionButton.addEventListener('touchstart', (e) => { e.preventDefault(); attackTarget(); });
+
+function updateJoystickMovement() {
+  if (!joystick.active) return;
+  const threshold = 15;
+  if (joystick.y < -threshold) { keys['w'] = true; }
+  else if (joystick.y > threshold) { keys['s'] = true; }
+  else { keys['w'] = false; keys['s'] = false; }
+  if (joystick.x < -threshold) { keys['a'] = true; }
+  else if (joystick.x > threshold) { keys['d'] = true; }
+  else { keys['a'] = false; keys['d'] = false; }
+}
 
 init();
 </script>
