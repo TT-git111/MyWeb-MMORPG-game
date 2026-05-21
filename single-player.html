@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaetram - Single Player</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;user-select:none}
+#game-container{position:relative;width:100vw;height:100vh}
+canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:crisp-edges}
+#text-canvas{z-index:4;pointer-events:none}
+#entities{z-index:3;pointer-events:none}
+#entities-fore{z-index:3;pointer-events:none}
+#foreground{z-index:2;pointer-events:none}
+#background{z-index:1;pointer-events:none}
+#cursor{z-index:5;pointer-events:none}
+#overlay{z-index:3;pointer-events:none}
+#ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none}
+#ui-layer>*{pointer-events:auto}
+#hotbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(0,0,0,0.7);border:2px solid #8B7355;padding:6px;border-radius:4px}
+.hotbar-slot{width:40px;height:40px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.hotbar-slot:hover{border-color:#D4A574}
+.hotbar-slot .key{position:absolute;top:-14px;left:50%;transform:translateX(-50%);color:#FFD700;font-size:10px;font-weight:bold}
+#stats-bar{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:4px}
+.stat-row{display:flex;align-items:center;gap:6px}
+.stat-label{color:#fff;font-size:11px;width:60px;text-align:right}
+.stat-bar-outer{width:180px;height:14px;background:#222;border:1px solid #555;border-radius:2px;overflow:hidden}
+.stat-bar-inner{height:100%;transition:width 0.3s}
+#hp-bar .stat-bar-inner{background:linear-gradient(180deg,#e74c3c,#c0392b)}
+#mana-bar .stat-bar-inner{background:linear-gradient(180deg,#3498db,#2980b9)}
+#xp-bar .stat-bar-inner{background:linear-gradient(180deg,#2ecc71,#27ae60)}
+.stat-text{color:#fff;font-size:10px;width:80px}
+#minimap{position:absolute;top:10px;right:10px;width:140px;height:140px;border:2px solid #8B7355;background:rgba(0,0,0,0.6);image-rendering:pixelated}
+#menu-buttons{position:absolute;top:10px;right:160px;display:flex;flex-direction:column;gap:3px}
+.menu-btn{width:120px;padding:6px 8px;background:rgba(0,0,0,0.7);border:1px solid #8B7355;color:#D4A574;font-size:11px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;transition:all 0.2s}
+.menu-btn:hover{background:rgba(139,115,85,0.5);color:#FFD700;border-color:#FFD700}
+.menu-btn.active{background:rgba(255,215,0,0.3);border-color:#FFD700;color:#FFD700}
+#chat-box{position:absolute;bottom:80px;left:10px;width:350px;max-height:150px;overflow-y:auto;color:#fff;font-size:11px;background:rgba(0,0,0,0.5);border:1px solid #444;padding:4px 6px;border-radius:2px;pointer-events:none}
+#chat-box .msg{margin:2px 0}
+#chat-box .damage{color:#e74c3c}
+#chat-box .heal{color:#2ecc71}
+#chat-box .xp{color:#f39c12}
+#chat-box .item{color:#9b59b6}
+#chat-box .npc{color:#3498db}
+#chat-box .system{color:#95a5a6}
+#modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;z-index:20;justify-content:center;align-items:center}
+.modal{background:linear-gradient(135deg,#2C1810,#3E2723);border:3px solid #8B7355;border-radius:4px;padding:0;min-width:300px;max-width:600px;max-height:80vh;overflow:hidden;color:#D4A574}
+.modal-header{background:rgba(0,0,0,0.4);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B7355;font-size:13px;font-weight:bold;color:#FFD700}
+.modal-close{cursor:pointer;font-size:16px;color:#D4A574}
+.modal-close:hover{color:#e74c3c}
+.modal-body{padding:12px;overflow-y:auto;max-height:60vh}
+.inventory-grid{display:grid;grid-template-columns:repeat(5,50px);grid-template-rows:repeat(4,50px);gap:3px}
+.inv-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.inv-slot:hover{border-color:#D4A574;background:rgba(139,115,85,0.3)}
+.inv-slot canvas{position:absolute;top:2px;left:2px}
+.inv-slot .count{position:absolute;bottom:1px;right:3px;color:#FFD700;font-size:10px;font-weight:bold;text-shadow:1px 1px 0 #000}
+.equip-slots{display:flex;flex-direction:column;gap:4px;margin-right:8px}
+.equip-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.equip-slot:hover{border-color:#D4A574}
+.equip-slot canvas{position:absolute}
+.equip-slot .label{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);color:#888;font-size:8px;white-space:nowrap}
+.skills-list{display:flex;flex-direction:column;gap:6px}
+.skill-row{display:flex;align-items:center;gap:8px}
+.skill-name{color:#D4A574;font-size:11px;width:90px}
+.skill-xp-bar{flex:1;height:12px;background:#222;border:1px solid #555;border-radius:2px;overflow:hidden}
+.skill-xp-fill{height:100%;background:linear-gradient(180deg,#f39c12,#e67e22);transition:width 0.5s}
+.skill-lvl{color:#FFD700;font-size:10px;width:30px;text-align:center}
+#quest-list{display:flex;flex-direction:column;gap:6px}
+.quest-item{padding:6px 8px;background:rgba(0,0,0,0.3);border:1px solid #5C4033;border-radius:2px;cursor:pointer}
+.quest-item:hover{border-color:#D4A574}
+.quest-name{color:#FFD700;font-size:11px}
+.quest-desc{color:#aaa;font-size:10px;margin-top:2px}
+.quest-progress{color:#2ecc71;font-size:10px}
+.dialog-box{position:absolute;bottom:50%;left:50%;transform:translate(-50%,50%);background:linear-gradient(135deg,#2C1810,#3E2723);border:3px solid #8B7355;border-radius:4px;padding:12px 16px;color:#D4A574;font-size:12px;min-width:250px;text-align:center;z-index:25}
+.dialog-box .speaker{color:#FFD700;font-weight:bold;margin-bottom:4px}
+.dialog-box .text{margin-bottom:8px}
+.dialog-box button{background:rgba(0,0,0,0.5);border:1px solid #8B7355;color:#D4A574;padding:4px 12px;margin:2px;cursor:pointer;font-family:'Courier New',monospace;font-size:11px}
+.dialog-box button:hover{background:rgba(139,115,85,0.5);color:#FFD700}
+
+/* --- GACHA STYLES --- */
+#gacha-btn{position:absolute;bottom:70px;right:10px;width:140px;padding:10px 8px;
+  background:linear-gradient(135deg,#8B0000,#4a0000);border:2px solid #f1c40f;color:#FFD700;
+  font-size:13px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;
+  border-radius:4px;transition:all 0.3s;z-index:11;font-weight:bold;letter-spacing:2px;
+  text-shadow:0 0 8px #f1c40f;animation:gachaGlow 1.5s ease-in-out infinite}
+#gacha-btn:hover{background:linear-gradient(135deg,#c0392b,#7b0000);box-shadow:0 0 20px #f1c40f;transform:scale(1.05)}
+@keyframes gachaGlow{0%,100%{box-shadow:0 0 8px #f1c40f}50%{box-shadow:0 0 25px #f39c12}}
+.gacha-result-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.75);z-index:30;flex-direction:column;align-items:center;justify-content:center}
+.gacha-result-card{background:linear-gradient(135deg,#1a0a0a,#2C1810);border:3px solid #8B7355;
+  border-radius:8px;padding:16px;text-align:center;min-width:280px;animation:cardAppear 0.5s ease-out}
+@keyframes cardAppear{0%{transform:scale(0.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.gacha-result-card .rarity{font-size:24px;font-weight:bold;margin:8px 0}
+.gacha-result-card .item-name{font-size:18px;margin:4px 0}
+.gacha-result-card .item-stats{font-size:11px;margin:4px 0;color:#aaa}
+.gacha-result-card .item-icon-canvas{margin:8px auto;image-rendering:pixelated}
+.gacha-result-card button{margin:6px 4px;background:rgba(0,0,0,0.5);border:1px solid #8B7355;color:#D4A574;
+  padding:6px 16px;cursor:pointer;font-family:'Courier New',monospace;font-size:11px;border-radius:3px}
+.gacha-result-card button:hover{background:rgba(139,115,85,0.5);color:#FFD700}
+.gacha-result-card button.draw-more{background:linear-gradient(135deg,#8B0000,#4a0000);border-color:#f1c40f;color:#FFD700;font-size:13px;font-weight:bold}
+.gacha-skip{position:absolute;top:15px;right:20px;color:#ccc;font-size:13px;cursor:pointer;z-index:31}
+.gacha-skip:hover{color:#e74c3c}
+
+/* rarity colors */
+.rarity-fan{color:#8B7355;text-shadow:0 0 4px #8B7355}
+.rarity-xuan{color:#2ecc71;text-shadow:0 0 6px #2ecc71}
+.rarity-di{color:#3498db;text-shadow:0 0 8px #3498db}
+.rarity-tian{color:#9b59b6;text-shadow:0 0 10px #9b59b6}
+.rarity-xian{color:#f39c12;text-shadow:0 0 12px #f1c40f}
+.rarity-shen{color:#e74c3c;text-shadow:0 0 14px #e74c3c}
+.rarity-sp{background:linear-gradient(90deg,#ff0,#f0f,#0ff,#f00,#ff0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;background-size:200% 100%;animation:rainbow 0.8s linear infinite}
+@keyframes rainbow{0%{background-position:0% 0%}100%{background-position:200% 0%}}
+
+/* backpack tabs */
+.backpack-tabs{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:8px}
+.backpack-tab{padding:4px 10px;background:rgba(0,0,0,0.4);border:1px solid #5C4033;color:#888;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;border-radius:2px 2px 0 0;transition:all 0.2s}
+.backpack-tab:hover{color:#fff;border-color:#888}
+.backpack-tab.active{color:#FFD700;border-color:#FFD700;background:rgba(255,215,0,0.1)}
+.backpack-tab.fan{border-color:#8B7355}
+.backpack-tab.xuan{border-color:#2ecc71}
+.backpack-tab.di{border-color:#3498db}
+.backpack-tab.tian{border-color:#9b59b6}
+.backpack-tab.xian{border-color:#f39c12}
+.backpack-tab.shen{border-color:#e74c3c}
+.backpack-tab.sp{background:linear-gradient(90deg,#ff0,#f0f,#0ff,#f00,#ff0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.backpack-grid{display:grid;grid-template-columns:repeat(6,50px);gap:3px}
+.backpack-slot{width:50px;height:50px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.backpack-slot:hover{border-color:#D4A574}
+.backpack-slot canvas{position:absolute;top:2px;left:2px}
+.backpack-actions{display:flex;gap:4px;margin-top:8px}
+.backpack-actions button{padding:4px 10px;background:rgba(0,0,0,0.5);border:1px solid #5C4033;color:#D4A574;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;border-radius:2px}
+.backpack-actions button:hover{border-color:#FFD700;color:#FFD700}
+.backpack-actions button.danger{color:#e74c3c;border-color:#e74c3c}
+.backpack-actions button.danger:hover{background:rgba(231,76,60,0.2)}
+
+/* gacha draw particles */
+.gacha-particle{position:absolute;pointer-events:none;animation:particleFly 1.5s ease-out forwards}
+@keyframes particleFly{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0}}
+
+/* result particles floating */
+.gacha-sparkle{position:absolute;pointer-events:none;width:4px;height:4px;border-radius:50%;animation:sparkleFloat 2s ease-out forwards}
+@keyframes sparkleFloat{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--sx),var(--sy)) scale(0);opacity:0}}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="background"></canvas>
+  <canvas id="foreground"></canvas>
+  <canvas id="entities"></canvas>
+  <canvas id="entities-fore"></canvas>
+  <canvas id="text-canvas"></canvas>
+  <canvas id="cursor"></canvas>
+  <canvas id="overlay"></canvas>
+  <div id="ui-layer">
+    <div id="stats-bar">
+      <div class="stat-row" id="hp-bar"><span class="stat-label">HP</span><div class="stat-bar-outer"><div class="stat-bar-inner" style="width:100%"></div></div><span class="stat-text">100/100</span></div>
+      <div class="stat-row" id="mana-bar"><span class="stat-label">Mana</span><div class="stat-bar-outer"><div class="stat-bar-inner" style="width:100%"></div></div><span class="stat-text">50/50</span></div>
+      <div class="stat-row" id="xp-bar"><span class="stat-label">XP</span><div class="stat-bar-outer"><div class="stat-bar-inner" style="width:0%"></div></div><span class="stat-text">0/83</span></div>
+    </div>
+    <div id="menu-buttons">
+      <button class="menu-btn" data-menu="inventory">🎒 物品栏 (I)</button>
+      <button class="menu-btn" data-menu="equipment">⚔ 装备 (E)</button>
+      <button class="menu-btn" data-menu="skills">⭐ 技能 (S)</button>
+      <button class="menu-btn" data-menu="quests">📜 任务 (Q)</button>
+      <button class="menu-btn" data-menu="gachabag" style="border-color:#f1c40f;color:#FFD700">🎰 装备背包</button>
+    </div>
+    <canvas id="minimap" width="140" height="140"></canvas>
+    <div id="chat-box"></div>
+    <div id="hotbar">
+      <div class="hotbar-slot" data-slot="0"><span class="key">1</span></div>
+      <div class="hotbar-slot" data-slot="1"><span class="key">2</span></div>
+      <div class="hotbar-slot" data-slot="2"><span class="key">3</span></div>
+      <div class="hotbar-slot" data-slot="3"><span class="key">4</span></div>
+      <div class="hotbar-slot" data-slot="4"><span class="key">5</span></div>
+      <div class="hotbar-slot" data-slot="5"><span class="key">6</span></div>
+      <div class="hotbar-slot" data-slot="6"><span class="key">7</span></div>
+      <div class="hotbar-slot" data-slot="7"><span class="key">8</span></div>
+    </div>
+    <button id="gacha-btn">🎰 抽奖</button>
+  </div>
+  <div id="dialog-box" class="dialog-box" style="display:none"></div>
+  <div id="gacha-result-overlay" class="gacha-result-overlay"></div>
+  <div id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header"><span id="modal-title">Inventory</span><span class="modal-close">✕</span></div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== K A E T R A M   S I N G L E   P L A Y E R ====================
+
+const TILE_SIZE = 16;
+const MAP_WIDTH = 400;
+const MAP_HEIGHT = 400;
+const ZOOM = 2;
+
+const canvasBg = document.getElementById('background');
+const canvasFg = document.getElementById('foreground');
+const canvasEnt = document.getElementById('entities');
+const canvasEntF = document.getElementById('entities-fore');
+const canvasText = document.getElementById('text-canvas');
+const canvasCursor = document.getElementById('cursor');
+const canvasOverlay = document.getElementById('overlay');
+const minimap = document.getElementById('minimap');
+const chatBox = document.getElementById('chat-box');
+const dialogBox = document.getElementById('dialog-box');
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalBody = document.getElementById('modal-body');
+
+const ctxBg = canvasBg.getContext('2d');
+const ctxFg = canvasFg.getContext('2d');
+const ctxEnt = canvasEnt.getContext('2d');
+const ctxEntF = canvasEntF.getContext('2d');
+const ctxText = canvasText.getContext('2d');
+const ctxCursor = canvasCursor.getContext('2d');
+const ctxOverlay = canvasOverlay.getContext('2d');
+const ctxMini = minimap.getContext('2d');
+
+let screenW, screenH, canvasW, canvasH;
+let camera = { x: 0, y: 0 };
+let keys = {};
+let mouse = { x: 0, y: 0, down: false, rightDown: false };
+let selectedCell = null;
+let pathQueue = [];
+let gameTime = 0;
+let animFrame = 0;
+let currentModal = null;
+let interactTarget = null;
+let dialogQueue = [];
+
+// ==================== SPRITE GENERATOR ====================
+const spriteCache = {};
+
+function makeSprite(w, h, drawFn) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  drawFn(c.getContext('2d'));
+  return c;
+}
+
+function px(ctx, x, y, c) { ctx.fillStyle = c; ctx.fillRect(x, y, 1, 1); }
+
+function rect(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+
+function playerSprite() {
+  const key = 'player';
+  if (spriteCache[key]) return spriteCache[key];
+  const frames = {};
+  ['idle_down', 'idle_up', 'idle_left', 'idle_right',
+   'walk_down', 'walk_up', 'walk_left', 'walk_right',
+   'atk_down', 'atk_up', 'atk_left', 'atk_right'].forEach((name, idx) => {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 20;
+    const ctx = c.getContext('2d');
+    const row = Math.floor(idx / 4);
+    const dir = idx % 4;
+    const isAtk = row === 2;
+    const isWalk = row === 1;
+    let legOff = 0, armOff = 0;
+    if (isWalk) { legOff = (animFrame % 6 < 3) ? 1 : -1; armOff = -legOff; }
+    if (isAtk) armOff = 3;
+    // body
+    rect(ctx, 5, 8, 6, 8, '#3498db');
+    rect(ctx, 5, 8, 6, 1, '#2980b9');
+    // head
+    rect(ctx, 5, 2, 6, 6, '#f5cba7');
+    rect(ctx, 5, 2, 6, 1, '#8B4513');
+    px(ctx, 6, 4, '#2c3e50'); px(ctx, 9, 4, '#2c3e50');
+    px(ctx, 7, 6, '#e74c3c');
+    // legs
+    rect(ctx, 5 + legOff, 16, 3, 4, '#2c3e50');
+    rect(ctx, 8 - legOff, 16, 3, 4, '#2c3e50');
+    // arms
+    rect(ctx, 2 - (dir===2?2:0) + (dir===3?2:0) + armOff, 9, 3, 5, '#f5cba7');
+    rect(ctx, 11 + (dir===2?2:0) - (dir===3?2:0) - armOff, 9, 3, 5, '#f5cba7');
+    if (isAtk) {
+      rect(ctx, dir===3 ? -2 : 13, 8, 5, 2, '#bdc3c7');
+      rect(ctx, dir===3 ? -2 : 13, 10, 2, 2, '#95a5a6');
+    }
+    frames[name] = c;
+  });
+  spriteCache[key] = frames;
+  return frames;
+}
+
+function mobSprite(type) {
+  const key = 'mob_' + type;
+  if (spriteCache[key]) return spriteCache[key];
+  const colors = {
+    rat: ['#8B7355', '#6B5335', '#e74c3c'],
+    skeleton: ['#ecf0f1', '#bdc3c7', '#e74c3c'],
+    slime: ['#2ecc71', '#27ae60', '#1abc9c'],
+    bat: ['#9b59b6', '#8e44ad', '#e74c3c'],
+    spider: ['#2c3e50', '#1a252f', '#e74c3c'],
+    wolf: ['#95a5a6', '#7f8c8d', '#e74c3c'],
+    zombie: ['#27ae60', '#1e8449', '#c0392b'],
+    demon: ['#c0392b', '#922b21', '#f39c12'],
+  };
+  const [c1, c2, eye] = colors[type] || colors.rat;
+  const frames = {};
+  ['idle_down', 'walk_down', 'atk_down', 'death'].forEach((name, idx) => {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 18;
+    const ctx = c.getContext('2d');
+    if (name === 'death') {
+      rect(ctx, 4, 10, 8, 3, c1);
+      rect(ctx, 5, 6, 6, 5, c1);
+      px(ctx, 7, 7, eye); px(ctx, 9, 7, eye);
+    } else {
+      let off = (name === 'walk_down' && animFrame % 6 < 3) ? 1 : 0;
+      rect(ctx, 4, 4 + off, 8, 6, c1);
+      rect(ctx, 4, 4, 8, 1, c2);
+      px(ctx, 6, 6 + off, eye); px(ctx, 9, 6 + off, eye);
+      px(ctx, 7, 8 + off, '#e74c3c');
+      rect(ctx, 3, 10 + off, 2, 4, c2);
+      rect(ctx, 11, 10 + off, 2, 4, c2);
+      if (name === 'atk_down') {
+        rect(ctx, 13, 7 + off, 4, 2, '#bdc3c7');
+      }
+    }
+    frames[name] = c;
+  });
+  spriteCache[key] = frames;
+  return frames;
+}
+
+function npcSprite(type) {
+  const key = 'npc_' + type;
+  if (spriteCache[key]) return spriteCache[key];
+  const colors = {
+    merchant: ['#f1c40f', '#d4a017', '#2c3e50'],
+    guard: ['#e74c3c', '#c0392b', '#f1c40f'],
+    wizard: ['#9b59b6', '#8e44ad', '#f1c40f'],
+    elder: ['#ecf0f1', '#bdc3c7', '#2980b9'],
+    blacksmith: ['#e67e22', '#d35400', '#f39c12'],
+  };
+  const [robe, robed, hat] = colors[type] || colors.merchant;
+  const frames = {};
+  ['idle_down'].forEach(name => {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 20;
+    const ctx = c.getContext('2d');
+    rect(ctx, 5, 6, 6, 10, robe);
+    rect(ctx, 5, 6, 6, 1, robed);
+    rect(ctx, 5, 1, 6, 5, '#f5cba7');
+    px(ctx, 6, 3, '#2c3e50'); px(ctx, 9, 3, '#2c3e50');
+    px(ctx, 7, 4, '#e74c3c');
+    rect(ctx, 4, 1, 8, 1, hat);
+    rect(ctx, 2, 8, 3, 5, '#f5cba7');
+    rect(ctx, 11, 8, 3, 5, '#f5cba7');
+    rect(ctx, 5, 16, 3, 4, robed);
+    rect(ctx, 8, 16, 3, 4, robed);
+    frames[name] = c;
+  });
+  spriteCache[key] = frames;
+  return frames;
+}
+
+function itemSprite(type) {
+  const key = 'item_' + type;
+  if (spriteCache[key]) return spriteCache[key];
+  const icons = {
+    sword: (ctx) => { rect(ctx,1,3,2,12,'#bdc3c7'); rect(ctx,1,1,2,2,'#f1c40f'); rect(ctx,0,14,4,2,'#8B4513'); },
+    axe: (ctx) => { rect(ctx,1,2,2,10,'#95a5a6'); rect(ctx,0,0,4,3,'#bdc3c7'); rect(ctx,0,12,4,3,'#8B4513'); },
+    pickaxe: (ctx) => { rect(ctx,1,2,2,10,'#8B4513'); rect(ctx,0,0,4,3,'#bdc3c7'); rect(ctx,8,0,3,3,'#95a5a6'); },
+    helmet: (ctx) => { rect(ctx,1,2,10,4,'#bdc3c7'); rect(ctx,2,6,8,2,'#95a5a6'); px(ctx,5,3,'#f1c40f'); },
+    chestplate: (ctx) => { rect(ctx,2,0,8,10,'#3498db'); rect(ctx,4,0,4,1,'#f1c40f'); rect(ctx,1,4,1,4,'#2980b9'); rect(ctx,10,4,1,4,'#2980b9'); },
+    legplates: (ctx) => { rect(ctx,2,0,4,8,'#2c3e50'); rect(ctx,7,0,4,8,'#2c3e50'); },
+    boots: (ctx) => { rect(ctx,2,4,8,4,'#8B4513'); rect(ctx,2,2,8,2,'#A0522D'); },
+    shield: (ctx) => { rect(ctx,2,1,8,10,'#8B4513'); rect(ctx,3,2,6,8,'#f39c12'); rect(ctx,4,3,4,6,'#d35400'); },
+    ring: (ctx) => { rect(ctx,2,3,8,6,'#f1c40f'); rect(ctx,4,5,4,2,'#d4a017'); px(ctx,5,1,'#e74c3c'); },
+    potion_hp: (ctx) => { rect(ctx,3,0,6,10,'#e74c3c'); rect(ctx,4,0,4,1,'#c0392b'); rect(ctx,2,10,8,2,'#8B4513'); },
+    potion_mana: (ctx) => { rect(ctx,3,0,6,10,'#3498db'); rect(ctx,4,0,4,1,'#2980b9'); rect(ctx,2,10,8,2,'#8B4513'); },
+    wood: (ctx) => { rect(ctx,1,2,10,8,'#8B4513'); rect(ctx,2,3,8,2,'#A0522D'); rect(ctx,3,5,6,1,'#6B3410'); },
+    ore: (ctx) => { rect(ctx,3,1,6,8,'#7f8c8d'); rect(ctx,2,3,1,4,'#95a5a6'); rect(ctx,9,3,1,4,'#95a5a6'); },
+    fish: (ctx) => { rect(ctx,2,3,8,4,'#3498db'); rect(ctx,3,2,6,1,'#2980b9'); px(ctx,2,4,'#2c3e50'); rect(ctx,8,2,2,3,'#2980b9'); },
+    bread: (ctx) => { rect(ctx,2,2,8,6,'#f39c12'); rect(ctx,2,2,8,2,'#e67e22'); rect(ctx,3,4,2,1,'#d35400'); rect(ctx,7,4,2,1,'#d35400'); },
+    gold: (ctx) => { rect(ctx,2,0,8,12,'#f1c40f'); rect(ctx,2,0,8,2,'#d4a017'); px(ctx,4,4,'#f39c12'); px(ctx,7,7,'#f39c12'); },
+    herb: (ctx) => { rect(ctx,4,2,2,8,'#2ecc71'); rect(ctx,3,3,1,3,'#27ae60'); rect(ctx,8,2,1,3,'#27ae60'); rect(ctx,5,0,3,3,'#1abc9c'); },
+    arrow: (ctx) => { rect(ctx,4,0,2,10,'#8B4513'); rect(ctx,3,0,4,2,'#bdc3c7'); rect(ctx,6,8,2,2,'#e74c3c'); },
+    bow: (ctx) => { rect(ctx,0,4,12,2,'#8B4513'); rect(ctx,1,2,10,1,'#A0522D'); rect(ctx,1,7,10,1,'#A0522D'); rect(ctx,0,4,1,3,'#bdc3c7'); },
+  };
+  const fn = icons[type];
+  if (!fn) {
+    const c = document.createElement('canvas');
+    c.width = 12; c.height = 12;
+    const ctx = c.getContext('2d');
+    rect(ctx, 2, 2, 8, 8, '#f1c40f');
+    spriteCache[key] = { idle: c };
+    return spriteCache[key];
+  }
+  const c = document.createElement('canvas');
+  c.width = 12; c.height = 12;
+  fn(c.getContext('2d'));
+  spriteCache[key] = { idle: c };
+  return spriteCache[key];
+}
+
+function treeSprite(type) {
+  const key = 'tree_' + type;
+  if (spriteCache[key]) return spriteCache[key];
+  const colors = { oak: ['#27ae60','#1e8449','#8B4513'], pine: ['#1e8449','#145a32','#6B3410'], palm: ['#2ecc71','#1e8449','#A0522D'], dead: ['#7f8c8d','#5d6d7e','#4a4a4a'] };
+  const [leaf, leafD, trunk] = colors[type] || colors.oak;
+  const frames = {};
+  ['idle','stump'].forEach((name, idx) => {
+    const c = document.createElement('canvas');
+    c.width = 32; c.height = 32;
+    const ctx = c.getContext('2d');
+    if (name === 'idle') {
+      rect(ctx,12,4,8,8,leaf);
+      rect(ctx,10,6,12,4,leafD);
+      rect(ctx,10,10,12,4,leafD);
+      rect(ctx,8,8,4,8,leaf);
+      rect(ctx,20,8,4,8,leaf);
+      rect(ctx,10,16,12,4,leaf);
+      rect(ctx,13,24,6,8,trunk);
+    } else {
+      rect(ctx,13,20,6,6,trunk);
+      rect(ctx,14,18,4,2,'#A0522D');
+    }
+    frames[name] = c;
+  });
+  spriteCache[key] = frames;
+  return frames;
+}
+
+function rockSprite() {
+  const key = 'rock';
+  if (spriteCache[key]) return spriteCache[key];
+  const c = document.createElement('canvas');
+  c.width = 20; c.height = 16;
+  const ctx = c.getContext('2d');
+  rect(ctx,4,6,12,8,'#7f8c8d');
+  rect(ctx,2,8,2,6,'#95a5a6');
+  rect(ctx,16,8,2,4,'#6c7a7a');
+  rect(ctx,4,4,8,4,'#95a5a6');
+  px(ctx,7,8,'#bdc3c7'); px(ctx,12,9,'#bdc3c7');
+  spriteCache[key] = { idle: c };
+  return spriteCache[key];
+}
+
+function projectileSprite() {
+  const key = 'projectile';
+  if (spriteCache[key]) return spriteCache[key];
+  const c = document.createElement('canvas');
+  c.width = 8; c.height = 8;
+  const ctx = c.getContext('2d');
+  rect(ctx,2,2,4,4,'#f1c40f');
+  px(ctx,3,3,'#fff'); px(ctx,4,4,'#fff');
+  spriteCache[key] = { idle: c };
+  return spriteCache[key];
+}
+
+// ==================== GAME DATA ====================
+const ITEMS = {
+  sword_bronze: { name: '铜剑', type: 'weapon', equipSlot: 'weapon', atk: 5, sprite: 'sword', value: 10 },
+  sword_iron: { name: '铁剑', type: 'weapon', equipSlot: 'weapon', atk: 10, sprite: 'sword', value: 50 },
+  axe_bronze: { name: '铜斧', type: 'weapon', equipSlot: 'weapon', atk: 3, sprite: 'axe', value: 8, tool: 'woodcutting' },
+  pickaxe_bronze: { name: '铜镐', type: 'weapon', equipSlot: 'weapon', atk: 3, sprite: 'pickaxe', value: 8, tool: 'mining' },
+  bow_wood: { name: '木弓', type: 'weapon', equipSlot: 'weapon', atk: 7, sprite: 'bow', value: 15, ranged: true },
+  helmet_bronze: { name: '铜盔', type: 'equipment', equipSlot: 'helmet', def: 3, sprite: 'helmet', value: 15 },
+  chestplate_bronze: { name: '铜胸甲', type: 'equipment', equipSlot: 'chestplate', def: 5, sprite: 'chestplate', value: 25 },
+  legplates_bronze: { name: '铜腿甲', type: 'equipment', equipSlot: 'legplates', def: 4, sprite: 'legplates', value: 20 },
+  boots_bronze: { name: '铜靴', type: 'equipment', equipSlot: 'boots', def: 2, sprite: 'boots', value: 10 },
+  shield_wood: { name: '木盾', type: 'equipment', equipSlot: 'shield', def: 4, sprite: 'shield', value: 12 },
+  ring_power: { name: '力量戒指', type: 'equipment', equipSlot: 'ring', atk: 3, sprite: 'ring', value: 30 },
+  potion_hp: { name: '生命药水', type: 'consumable', heal: 25, sprite: 'potion_hp', value: 5 },
+  potion_mana: { name: '法力药水', type: 'consumable', healMana: 15, sprite: 'potion_mana', value: 5 },
+  wood: { name: '木材', type: 'material', sprite: 'wood', value: 2 },
+  ore_copper: { name: '铜矿石', type: 'material', sprite: 'ore', value: 3 },
+  fish_raw: { name: '生鱼', type: 'consumable', heal: 8, sprite: 'fish', value: 4 },
+  bread: { name: '面包', type: 'consumable', heal: 12, sprite: 'bread', value: 3 },
+  gold: { name: '金币', type: 'currency', sprite: 'gold', value: 1 },
+  herb: { name: '草药', type: 'material', sprite: 'herb', value: 4 },
+  arrow: { name: '箭矢', type: 'ammo', sprite: 'arrow', value: 1 },
+};
+
+// ==================== GACHA SYSTEM ====================
+const RARITY = {
+  fan: { name: '凡品', cls: 'fan', color: '#8B7355', glow: 'rgba(139,115,85,0.5)', prob: 0.80, statMult: 1, sell: 5 },
+  xuan: { name: '玄品', cls: 'xuan', color: '#2ecc71', glow: 'rgba(46,204,113,0.5)', prob: 0.40, statMult: 2, sell: 15 },
+  di: { name: '地品', cls: 'di', color: '#3498db', glow: 'rgba(52,152,219,0.5)', prob: 0.20, statMult: 3.5, sell: 40 },
+  tian: { name: '天品', cls: 'tian', color: '#9b59b6', glow: 'rgba(155,89,182,0.5)', prob: 0.10, statMult: 6, sell: 100 },
+  xian: { name: '仙品', cls: 'xian', color: '#f39c12', glow: 'rgba(243,156,18,0.6)', prob: 0.05, statMult: 10, sell: 300 },
+  shen: { name: '神品', cls: 'shen', color: '#e74c3c', glow: 'rgba(231,76,60,0.7)', prob: 0.02, statMult: 18, sell: 1000 },
+  sp: { name: 'SP', cls: 'sp', color: '#fff', glow: 'rgba(255,255,255,0.9)', prob: 0.005, statMult: 35, sell: 5000 },
+};
+const RARITY_ORDER = ['fan','xuan','di','tian','xian','shen','sp'];
+
+function genGachaIcon(rarity, slot) {
+  const key = 'gacha_' + rarity + '_' + slot;
+  if (spriteCache[key]) return spriteCache[key];
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 32;
+  const ctx = c.getContext('2d');
+  const rcol = RARITY[rarity].color;
+  ctx.fillStyle = rcol;
+  ctx.globalAlpha = 0.25;
+  ctx.fillRect(0,0,32,32);
+  ctx.globalAlpha = 1;
+  // glow border
+  ctx.strokeStyle = rcol;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1,1,30,30);
+  ctx.shadowColor = rcol;
+  ctx.shadowBlur = 6;
+  ctx.strokeStyle = rcol;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1,1,30,30);
+  ctx.shadowBlur = 0;
+  // rarity star
+  const stars = RARITY_ORDER.indexOf(rarity) + 1;
+  for (let i = 0; i < Math.min(stars, 7); i++) {
+    ctx.fillStyle = (i < 6) ? rcol : '#fff';
+    const sx = 4 + (i % 4) * 7;
+    const sy = 26 - Math.floor(i / 4) * 7;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = (i < 6) ? '#fff' : '#000';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+  // slot icon
+  ctx.fillStyle = rcol;
+  ctx.font = '14px "Courier New"';
+  ctx.textAlign = 'center';
+  const icons = { weapon: '⚔', helmet: '⛑', chestplate: '🛡', legplates: '👖', boots: '👢', shield: '🛡', ring: '💍' };
+  ctx.fillText(icons[slot] || '◆', 16, 18);
+  spriteCache[key] = c;
+  return c;
+}
+
+const GACHA_POOL = {
+  fan: [
+    { name: '木剑', slot: 'weapon', atk: 2 },
+    { name: '布帽', slot: 'helmet', def: 1 },
+    { name: '布衣', slot: 'chestplate', def: 2 },
+    { name: '布裤', slot: 'legplates', def: 1 },
+    { name: '草鞋', slot: 'boots', def: 1, spd: 1 },
+    { name: '木盾', slot: 'shield', def: 2 },
+    { name: '石戒', slot: 'ring', atk: 1, def: 1 },
+    { name: '骨棒', slot: 'weapon', atk: 3 },
+    { name: '皮帽', slot: 'helmet', def: 2 },
+    { name: '皮甲', slot: 'chestplate', def: 3 },
+    { name: '皮裤', slot: 'legplates', def: 2 },
+    { name: '皮靴', slot: 'boots', def: 2 },
+    { name: '小圆盾', slot: 'shield', def: 3 },
+    { name: '铜戒', slot: 'ring', atk: 2 },
+    { name: '短弓', slot: 'weapon', atk: 4 },
+  ],
+  xuan: [
+    { name: '铁剑', slot: 'weapon', atk: 5 },
+    { name: '铁盔', slot: 'helmet', def: 4 },
+    { name: '铁甲', slot: 'chestplate', def: 6 },
+    { name: '铁护腿', slot: 'legplates', def: 4 },
+    { name: '铁靴', slot: 'boots', def: 3 },
+    { name: '钢盾', slot: 'shield', def: 5 },
+    { name: '翡翠戒', slot: 'ring', atk: 3, def: 2 },
+    { name: '精铁剑', slot: 'weapon', atk: 7 },
+    { name: '精铁盔', slot: 'helmet', def: 5 },
+    { name: '锁子甲', slot: 'chestplate', def: 8 },
+    { name: '鳞甲护腿', slot: 'legplates', def: 5 },
+    { name: '行军靴', slot: 'boots', def: 4, spd: 2 },
+    { name: '塔盾', slot: 'shield', def: 7 },
+    { name: '蓝宝石戒', slot: 'ring', atk: 4, def: 3 },
+    { name: '双刃斧', slot: 'weapon', atk: 8 },
+    { name: '秘银头盔', slot: 'helmet', def: 6, hp: 10 },
+    { name: '秘银胸甲', slot: 'chestplate', def: 9, hp: 15 },
+    { name: '猎人之弓', slot: 'weapon', atk: 6, spd: 3 },
+    { name: '符文盾', slot: 'shield', def: 8, mana: 5 },
+    { name: '月光戒', slot: 'ring', atk: 5, mana: 8 },
+  ],
+  di: [
+    { name: '寒冰剑', slot: 'weapon', atk: 11 },
+    { name: '寒冰盔', slot: 'helmet', def: 9 },
+    { name: '寒冰甲', slot: 'chestplate', def: 12 },
+    { name: '寒冰护腿', slot: 'legplates', def: 9 },
+    { name: '寒冰靴', slot: 'boots', def: 7, spd: 3 },
+    { name: '寒冰盾', slot: 'shield', def: 10 },
+    { name: '冰晶戒', slot: 'ring', atk: 6, mana: 10 },
+    { name: '烈焰刀', slot: 'weapon', atk: 13 },
+    { name: '烈焰盔', slot: 'helmet', def: 10, atk: 2 },
+    { name: '烈焰铠', slot: 'chestplate', def: 14, atk: 3 },
+    { name: '烈焰护腿', slot: 'legplates', def: 10 },
+    { name: '烈焰靴', slot: 'boots', def: 8, atk: 1 },
+    { name: '龙鳞盾', slot: 'shield', def: 12, hp: 20 },
+    { name: '红宝石戒', slot: 'ring', atk: 8, hp: 25 },
+    { name: '雷霆之锤', slot: 'weapon', atk: 15 },
+    { name: '风暴盔', slot: 'helmet', def: 11, spd: 2 },
+    { name: '风暴甲', slot: 'chestplate', def: 16, spd: 2 },
+    { name: '暗影弓', slot: 'weapon', atk: 14, spd: 4 },
+    { name: '暗影戒', slot: 'ring', atk: 7, spd: 3 },
+    { name: '大地之盾', slot: 'shield', def: 14, hp: 30 },
+  ],
+  tian: [
+    { name: '天雷剑', slot: 'weapon', atk: 20 },
+    { name: '天雷冠', slot: 'helmet', def: 16, mana: 15 },
+    { name: '天雷战甲', slot: 'chestplate', def: 22, hp: 30 },
+    { name: '天雷护腿', slot: 'legplates', def: 17, spd: 3 },
+    { name: '天雷靴', slot: 'boots', def: 14, spd: 5 },
+    { name: '天雷盾', slot: 'shield', def: 18, mana: 20 },
+    { name: '天雷戒', slot: 'ring', atk: 12, def: 8 },
+    { name: '圣光之剑', slot: 'weapon', atk: 22, hp: 40 },
+    { name: '圣光头盔', slot: 'helmet', def: 18, hp: 30 },
+    { name: '圣光铠甲', slot: 'chestplate', def: 25, hp: 50 },
+    { name: '圣光护腿', slot: 'legplates', def: 19 },
+    { name: '圣光战靴', slot: 'boots', def: 16, spd: 4 },
+    { name: '天使之盾', slot: 'shield', def: 20, hp: 40 },
+    { name: '天堂之戒', slot: 'ring', atk: 14, hp: 35 },
+    { name: '龙牙弓', slot: 'weapon', atk: 24, spd: 6 },
+    { name: '凤凰羽盔', slot: 'helmet', def: 20, atk: 4 },
+    { name: '凤凰羽衣', slot: 'chestplate', def: 27, atk: 5 },
+    { name: '恶魔之刃', slot: 'weapon', atk: 26, spd: -2 },
+    { name: '恶魔之盾', slot: 'shield', def: 22, atk: 5 },
+    { name: '虚空戒', slot: 'ring', atk: 16, mana: 25 },
+  ],
+  xian: [
+    { name: '轩辕剑', slot: 'weapon', atk: 35 },
+    { name: '轩辕冠', slot: 'helmet', def: 28, atk: 6 },
+    { name: '轩辕神甲', slot: 'chestplate', def: 38, hp: 60 },
+    { name: '轩辕护腿', slot: 'legplates', def: 29, spd: 5 },
+    { name: '轩辕靴', slot: 'boots', def: 24, spd: 8 },
+    { name: '轩辕盾', slot: 'shield', def: 30, hp: 50 },
+    { name: '轩辕戒', slot: 'ring', atk: 20, def: 15 },
+    { name: '盘古斧', slot: 'weapon', atk: 40, hp: 50 },
+    { name: '盘古盔', slot: 'helmet', def: 30, hp: 40 },
+    { name: '盘古铠', slot: 'chestplate', def: 42, hp: 80 },
+    { name: '盘古护腿', slot: 'legplates', def: 32, atk: 3 },
+    { name: '盘古战靴', slot: 'boots', def: 27, atk: 3 },
+    { name: '女娲石盾', slot: 'shield', def: 35, hp: 70 },
+    { name: '女娲戒', slot: 'ring', atk: 22, hp: 60 },
+    { name: '后羿弓', slot: 'weapon', atk: 38, spd: 10 },
+    { name: '伏羲琴', slot: 'weapon', atk: 42, mana: 50 },
+    { name: '昆仑镜盾', slot: 'shield', def: 33, mana: 40 },
+    { name: '东皇钟', slot: 'ring', atk: 25, def: 20, hp: 40 },
+    { name: '炼妖壶', slot: 'helmet', def: 32, mana: 35 },
+    { name: '昊天塔', slot: 'chestplate', def: 45, hp: 100 },
+  ],
+  shen: [
+    { name: '混沌之刃', slot: 'weapon', atk: 60 },
+    { name: '混沌皇冠', slot: 'helmet', def: 45, atk: 10 },
+    { name: '混沌神甲', slot: 'chestplate', def: 60, hp: 120 },
+    { name: '混沌护腿', slot: 'legplates', def: 48, spd: 8 },
+    { name: '混沌神靴', slot: 'boots', def: 40, spd: 12 },
+    { name: '混沌壁垒', slot: 'shield', def: 50, hp: 100 },
+    { name: '混沌之戒', slot: 'ring', atk: 35, def: 25 },
+    { name: '创世神剑', slot: 'weapon', atk: 65, hp: 80 },
+    { name: '创世头盔', slot: 'helmet', def: 48, hp: 60 },
+    { name: '创世铠甲', slot: 'chestplate', def: 65, hp: 150 },
+    { name: '创世腿甲', slot: 'legplates', def: 50, atk: 5 },
+    { name: '创世战靴', slot: 'boots', def: 43, atk: 5 },
+    { name: '灭世之盾', slot: 'shield', def: 55, hp: 120 },
+    { name: '灭世戒', slot: 'ring', atk: 38, hp: 100 },
+    { name: '永恒之弓', slot: 'weapon', atk: 62, spd: 15 },
+    { name: '不朽之冠', slot: 'helmet', def: 50, mana: 50 },
+    { name: '不朽之铠', slot: 'chestplate', def: 68, hp: 180 },
+    { name: '审判之剑', slot: 'weapon', atk: 70, hp: 100 },
+    { name: '审判之盾', slot: 'shield', def: 58, atk: 10 },
+    { name: '终焉之戒', slot: 'ring', atk: 42, def: 30, hp: 80 },
+  ],
+  sp: [
+    { name: '命运之刃', slot: 'weapon', atk: 100, hp: 200 },
+    { name: '命运皇冠', slot: 'helmet', def: 80, atk: 20, mana: 50 },
+    { name: '命运神铠', slot: 'chestplate', def: 100, hp: 300 },
+    { name: '命运护腿', slot: 'legplates', def: 80, spd: 15 },
+    { name: '命运神靴', slot: 'boots', def: 70, spd: 20 },
+    { name: '绝对防御', slot: 'shield', def: 90, hp: 200, mana: 50 },
+    { name: '命运之戒', slot: 'ring', atk: 55, def: 40, hp: 150 },
+    { name: '星神剑', slot: 'weapon', atk: 110, mana: 80 },
+    { name: '星神盔', slot: 'helmet', def: 85, hp: 100, mana: 40 },
+    { name: '星神铠', slot: 'chestplate', def: 105, hp: 350 },
+    { name: '星神腿甲', slot: 'legplates', def: 85, atk: 10 },
+    { name: '星神战靴', slot: 'boots', def: 75, atk: 8, spd: 18 },
+    { name: '诸神黄昏', slot: 'weapon', atk: 120, hp: 250 },
+    { name: '创世之光', slot: 'shield', def: 95, hp: 300, mana: 80 },
+    { name: '起源之戒', slot: 'ring', atk: 60, def: 50, hp: 200, mana: 60 },
+  ],
+};
+
+let gachaInventory = { fan:[], xuan:[], di:[], tian:[], xian:[], shen:[], sp:[] };
+
+function gachaEquipToSlots() {
+  const slotMap = { weapon:'weapon', helmet:'helmet', chestplate:'chestplate', legplates:'legplates', boots:'boots', shield:'shield', ring:'ring' };
+  return slotMap;
+}
+
+function doGachaDraw() {
+  const overlay = document.getElementById('gacha-result-overlay');
+  const gachaBtn = document.getElementById('gacha-btn');
+  const roll = Math.random();
+  let cumProb = 0;
+  let rarity = 'fan';
+  for (const r of RARITY_ORDER) {
+    cumProb += RARITY[r].prob;
+    if (roll < cumProb) { rarity = r; break; }
+  }
+  const pool = GACHA_POOL[rarity];
+  const item = pool[Math.floor(Math.random() * pool.length)];
+
+  const scaled = {};
+  const mult = RARITY[rarity].statMult;
+  if (item.atk) scaled.atk = Math.floor(item.atk * mult);
+  if (item.def) scaled.def = Math.floor(item.def * mult);
+  if (item.hp) scaled.hp = Math.floor(item.hp * mult);
+  if (item.mana) scaled.mana = Math.floor(item.mana * mult);
+  if (item.spd) scaled.spd = item.spd;
+  const sellPrice = RARITY[rarity].sell * (1 + Math.floor(Math.random() * 5));
+
+  gachaInventory[rarity].push({
+    name: item.name, rarity, slot: item.slot,
+    atk: scaled.atk || 0, def: scaled.def || 0,
+    hp: scaled.hp || 0, mana: scaled.mana || 0, spd: scaled.spd || 0,
+    sell: sellPrice
+  });
+
+  spawnGachaParticles(gachaBtn);
+  showGachaResult(item, rarity, scaled, sellPrice);
+}
+
+function showGachaResult(item, rarity, scaled, sellPrice) {
+  const overlay = document.getElementById('gacha-result-overlay');
+  const rdata = RARITY[rarity];
+  const statLines = [];
+  if (scaled.atk) statLines.push('⚔ +' + scaled.atk + ' 攻击');
+  if (scaled.def) statLines.push('🛡 +' + scaled.def + ' 防御');
+  if (scaled.hp) statLines.push('❤ +' + scaled.hp + ' 生命');
+  if (scaled.mana) statLines.push('💎 +' + scaled.mana + ' 法力');
+  if (scaled.spd) statLines.push('👟 +' + scaled.spd + ' 速度');
+
+  const icon = genGachaIcon(rarity, item.slot);
+  const iconData = icon.toDataURL();
+
+  overlay.innerHTML = `
+    <div class="gacha-skip" onclick="hideGachaResult()">跳过 ✕</div>
+    <div class="gacha-result-card" style="border-color:${rdata.color};box-shadow:0 0 30px ${rdata.glow}">
+      <img src="${iconData}" class="item-icon-canvas" width="64" height="64">
+      <div class="rarity rarity-${rarity}">${rdata.name}</div>
+      <div class="item-name" style="color:${rdata.color}">${item.name}</div>
+      <div class="item-stats">${statLines.join(' &nbsp;|&nbsp; ')}</div>
+      <div style="color:#888;font-size:10px;margin:4px 0">售价: ${sellPrice} 金币</div>
+      <button onclick="hideGachaResult()">确认</button>
+      <button class="draw-more" onclick="hideGachaResult();setTimeout(doGachaDraw,200)">再抽一次</button>
+    </div>`;
+  overlay.style.display = 'flex';
+
+  spawnResultSparkles(overlay, rdata.color);
+}
+
+function hideGachaResult() {
+  document.getElementById('gacha-result-overlay').style.display = 'none';
+}
+
+function spawnGachaParticles(btn) {
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#f1c40f','#e74c3c','#3498db','#2ecc71','#9b59b6','#f39c12','#fff'];
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'gacha-particle';
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    p.style.width = '6px';
+    p.style.height = '6px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.borderRadius = '50%';
+    p.style.setProperty('--px', (Math.random() - 0.5) * 200 + 'px');
+    p.style.setProperty('--py', (Math.random() - 0.8) * 200 + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1500);
+  }
+}
+
+function spawnResultSparkles(overlay, color) {
+  const rect = overlay.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('div');
+    s.className = 'gacha-sparkle';
+    s.style.left = cx + 'px';
+    s.style.top = cy + 'px';
+    s.style.background = color;
+    s.style.boxShadow = '0 0 6px ' + color;
+    s.style.setProperty('--sx', (Math.random() - 0.5) * 300 + 'px');
+    s.style.setProperty('--sy', (Math.random() - 0.5) * 300 + 'px');
+    s.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 3500);
+  }
+}
+
+function getGachaStatBonuses() {
+  let bonus = { atk: 0, def: 0, hp: 0, mana: 0, spd: 0 };
+  Object.values(player.gachaEquips || {}).forEach(gi => {
+    if (gi) { bonus.atk += gi.atk || 0; bonus.def += gi.def || 0; bonus.hp += gi.hp || 0; bonus.mana += gi.mana || 0; }
+  });
+  return bonus;
+}
+
+function showGachaBackpack() {
+  showModal('🎰 装备背包', (body) => {
+    if (!gachaBagActiveRarity) gachaBagActiveRarity = 'fan';
+    renderGachaBag(body);
+  });
+}
+
+let gachaBagActiveRarity = 'fan';
+
+function renderGachaBag(body) {
+  body.innerHTML = '';
+  const tabs = document.createElement('div');
+  tabs.className = 'backpack-tabs';
+  RARITY_ORDER.forEach(r => {
+    const tab = document.createElement('div');
+    tab.className = 'backpack-tab ' + r + (gachaBagActiveRarity === r ? ' active' : '');
+    tab.textContent = RARITY[r].name + ' (' + gachaInventory[r].length + ')';
+    tab.addEventListener('click', () => {
+      gachaBagActiveRarity = r;
+      renderGachaBag(body);
+    });
+    tabs.appendChild(tab);
+  });
+  body.appendChild(tabs);
+
+  const items = gachaInventory[gachaBagActiveRarity];
+  if (items.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:#888;text-align:center;padding:20px';
+    empty.textContent = '该品阶暂无装备，快去抽奖吧！';
+    body.appendChild(empty);
+  } else {
+    const grid = document.createElement('div');
+    grid.className = 'backpack-grid';
+    items.forEach((gi, idx) => {
+      const slot = document.createElement('div');
+      slot.className = 'backpack-slot';
+      slot.style.borderColor = RARITY[gi.rarity].color;
+      const icon = genGachaIcon(gi.rarity, gi.slot);
+      const img = document.createElement('canvas');
+      img.width = 32; img.height = 32;
+      img.getContext('2d').drawImage(icon, 0, 0);
+      img.style.width = '38px'; img.style.height = '38px';
+      img.style.imageRendering = 'pixelated';
+      slot.appendChild(img);
+      slot.title = `${gi.name}\n⚔${gi.atk} 🛡${gi.def} ❤${gi.hp} 💎${gi.mana} 👟${gi.spd}\n售价:${gi.sell}金币\n左键装备 | 右键出售`;
+      slot.addEventListener('click', () => equipGachaItem(gachaBagActiveRarity, idx, body));
+      slot.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        sellGachaItem(gachaBagActiveRarity, idx, body);
+      });
+      grid.appendChild(slot);
+    });
+    body.appendChild(grid);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'backpack-actions';
+  const equipAllBtn = document.createElement('button');
+  equipAllBtn.textContent = '一键装备最优';
+  equipAllBtn.addEventListener('click', () => autoEquipBest(body));
+  actions.appendChild(equipAllBtn);
+
+  const sellAllBtn = document.createElement('button');
+  sellAllBtn.className = 'danger';
+  sellAllBtn.textContent = '一键清空 ' + RARITY[gachaBagActiveRarity].name;
+  sellAllBtn.addEventListener('click', () => clearGachaRarity(gachaBagActiveRarity, body));
+  actions.appendChild(sellAllBtn);
+  body.appendChild(actions);
+
+  const tip = document.createElement('div');
+  tip.style.cssText = 'color:#666;font-size:9px;margin-top:6px';
+  tip.textContent = '提示: 左键装备 | 右键出售 | 点击下方"一键清空"清除该品阶全部装备';
+  body.appendChild(tip);
+}
+
+function equipGachaItem(rarity, idx, body) {
+  if (!player.gachaEquips) player.gachaEquips = {};
+  const items = gachaInventory[rarity];
+  if (!items || idx >= items.length) return;
+  const gi = items[idx];
+  player.gachaEquips[gi.slot] = { ...gi };
+  addChatMsg(`{item}装备了 ${RARITY[rarity].name} ${gi.name}`);
+  recalcPlayerStats();
+  if (body) renderGachaBag(body);
+  updateGachaEquipDisplay();
+}
+
+function sellGachaItem(rarity, idx, body) {
+  const items = gachaInventory[rarity];
+  if (!items || idx >= items.length) return;
+  const gi = items[idx];
+  const price = gi.sell;
+  addToInventory('gold', price);
+  addChatMsg(`{item}出售了 ${gi.name}，获得 ${price} 金币`);
+  if (player.gachaEquips && player.gachaEquips[gi.slot] && player.gachaEquips[gi.slot].name === gi.name) {
+    player.gachaEquips[gi.slot] = null;
+    recalcPlayerStats();
+  }
+  items.splice(idx, 1);
+  if (body) renderGachaBag(body);
+}
+
+function clearGachaRarity(rarity, body) {
+  const items = gachaInventory[rarity];
+  if (!items || items.length === 0) return;
+  let totalGold = 0;
+  items.forEach(gi => {
+    totalGold += gi.sell;
+    if (player.gachaEquips && player.gachaEquips[gi.slot] && player.gachaEquips[gi.slot].name === gi.name) {
+      player.gachaEquips[gi.slot] = null;
+    }
+  });
+  addToInventory('gold', totalGold);
+  addChatMsg(`{item}一键清空了 ${RARITY[rarity].name} 装备 (${items.length}件)，获得 ${totalGold} 金币`);
+  gachaInventory[rarity] = [];
+  recalcPlayerStats();
+  if (body) renderGachaBag(body);
+}
+
+function autoEquipBest(body) {
+  if (!player.gachaEquips) player.gachaEquips = {};
+  const slots = ['weapon','helmet','chestplate','legplates','boots','shield','ring'];
+  slots.forEach(slot => {
+    let best = null, bestScore = -1;
+    RARITY_ORDER.forEach(r => {
+      gachaInventory[r].forEach(gi => {
+        if (gi.slot !== slot) return;
+        const score = gi.atk + gi.def + gi.hp + gi.mana + gi.spd;
+        if (score > bestScore) { bestScore = score; best = gi; }
+      });
+    });
+    if (best) player.gachaEquips[slot] = { ...best };
+  });
+  recalcPlayerStats();
+  addChatMsg('{item}已自动装备各部位最优装备！');
+  updateGachaEquipDisplay();
+  if (body) renderGachaBag(body);
+}
+
+function recalcPlayerStats() {
+  const base = { hp: 100, mana: 50 };
+  const lvlBonus = { hp: (player.level - 1) * 5, mana: (player.level - 1) * 3 };
+  const gachaBonus = getGachaStatBonuses();
+  player.maxHp = base.hp + lvlBonus.hp + (gachaBonus.hp || 0);
+  player.maxMana = base.mana + lvlBonus.mana + (gachaBonus.mana || 0);
+  player.hp = Math.min(player.hp, player.maxHp);
+  player.mana = Math.min(player.mana, player.maxMana);
+}
+
+function updateGachaEquipDisplay() {
+  if (currentModal === '装备') showEquipment();
+}
+
+function getPlayerAtk() {
+  let atk = 3 + Math.floor(skills.attack.level * 0.5) + Math.floor(skills.strength.level * 0.5);
+  if (player.equipment.weapon) atk += ITEMS[player.equipment.weapon].atk || 0;
+  if (player.gachaEquips && player.gachaEquips.weapon) atk += player.gachaEquips.weapon.atk || 0;
+  Object.values(player.gachaEquips || {}).forEach(gi => { if (gi && gi.atk) atk += gi.atk; });
+  if (player.gachaEquips && player.gachaEquips.weapon) atk -= player.gachaEquips.weapon.atk || 0;
+  return atk;
+}
+
+function getPlayerDef() {
+  let def = Math.floor(skills.defense.level * 0.5);
+  Object.values(player.equipment).forEach(key => { def += ITEMS[key]?.def || 0; });
+  Object.values(player.gachaEquips || {}).forEach(gi => { if (gi && gi.def) def += gi.def; });
+  return def;
+}
+
+const QUESTS = {
+  q1: {
+    name: '新手试炼', desc: '在村庄附近击败3只老鼠，证明你的勇气。', giver: 'elder',
+    objectives: [{ type: 'kill', target: 'rat', count: 3, current: 0 }],
+    rewards: { xp: 50, items: [{ key: 'sword_bronze', count: 1 }, { key: 'potion_hp', count: 3 }] },
+    completed: false
+  },
+  q2: {
+    name: '收集木材', desc: '为铁匠收集5个木材来制作工具。', giver: 'blacksmith',
+    objectives: [{ type: 'collect', target: 'wood', count: 5, current: 0 }],
+    rewards: { xp: 80, items: [{ key: 'axe_bronze', count: 1 }, { key: 'gold', count: 20 }] },
+    completed: false
+  },
+  q3: {
+    name: '骷髅威胁', desc: '击败5个骷髅，保护村庄的安全。', giver: 'guard',
+    objectives: [{ type: 'kill', target: 'skeleton', count: 5, current: 0 }],
+    rewards: { xp: 150, items: [{ key: 'sword_iron', count: 1 }, { key: 'chestplate_bronze', count: 1 }] },
+    completed: false
+  },
+  q4: {
+    name: '草药采集', desc: '为巫师收集4个草药来制作药水。', giver: 'wizard',
+    objectives: [{ type: 'collect', target: 'herb', count: 4, current: 0 }],
+    rewards: { xp: 100, items: [{ key: 'potion_hp', count: 5 }, { key: 'potion_mana', count: 3 }] },
+    completed: false
+  },
+};
+
+// ==================== MAP GENERATION ====================
+const TILE = { GRASS: 0, PATH: 1, SAND: 2, WATER: 3, DEEP_WATER: 4, WALL: 5, FLOOR: 6, DIRT: 7, FLOWER: 8, BRIDGE: 9, DOOR: 10 };
+
+const tileColors = {
+  [TILE.GRASS]: ['#4a8c3f','#3d7a33','#528e44','#45803a','#4c8a40'],
+  [TILE.PATH]: ['#c4a46c','#b8944c','#ccac74','#c09c5c','#c8a864'],
+  [TILE.SAND]: ['#e8d5a3','#e0cc96','#ecd9a8','#e4d09c','#e6d2a0'],
+  [TILE.WATER]: ['#3388cc','#2e7ab8','#3890d4','#3080c0','#3588c8'],
+  [TILE.DEEP_WATER]: ['#2266aa','#1e5c9a','#2470b2','#2060a0','#2268a8'],
+  [TILE.WALL]: ['#666666','#5a5a5a','#6e6e6e','#606060','#686868'],
+  [TILE.FLOOR]: ['#8B7355','#7d674c','#937b5d','#856d50','#8e7658'],
+  [TILE.DIRT]: ['#8B6914','#7d5e12','#937016','#856414','#8e6c14'],
+  [TILE.FLOWER]: ['#4a8c3f','#3d7a33','#528e44'],
+  [TILE.BRIDGE]: ['#A0522D','#8B4513','#A85a35','#964d1a','#a45530'],
+  [TILE.DOOR]: ['#8B4513','#A0522D','#6B3410'],
+};
+
+let mapData = [];
+let mapCollision = [];
+let mapHigh = new Set();
+
+function seedRand(seed) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
+}
+
+function generateMap() {
+  const rand = seedRand(12345);
+  mapData = new Array(MAP_WIDTH * MAP_HEIGHT).fill(TILE.GRASS);
+  mapCollision = new Array(MAP_WIDTH * MAP_HEIGHT).fill(false);
+  mapHigh.clear();
+
+  for (let i = 0; i < MAP_WIDTH * MAP_HEIGHT; i++) {
+    let x = i % MAP_WIDTH, y = Math.floor(i / MAP_WIDTH);
+    let n = (Math.sin(x * 0.3) * Math.cos(y * 0.3) + Math.sin(x * 0.1 + y * 0.1) * 0.5 + 0.5);
+    let r = rand();
+
+    if (n > 0.85 && r < 0.3) mapData[i] = TILE.WATER;
+    else if (n > 0.78 && r < 0.2) mapData[i] = TILE.DEEP_WATER;
+    else if (n < 0.15 && r < 0.25) mapData[i] = TILE.SAND;
+    else if (r < 0.02) mapData[i] = Math.random() < 0.5 ? TILE.FLOWER : TILE.DIRT;
+    else mapData[i] = TILE.GRASS;
+
+    if (mapData[i] === TILE.WATER || mapData[i] === TILE.DEEP_WATER) {
+      mapCollision[i] = true;
+      mapHigh.add(i);
+    }
+  }
+
+  // village area
+  const vx = 35, vy = 40, vw = 12, vh = 8;
+  for (let dy = 0; dy < vh; dy++)
+    for (let dx = 0; dx < vw; dx++) {
+      const i = (vy + dy) * MAP_WIDTH + (vx + dx);
+      if (dy === 0 || dy === vh - 1 || dx === 0 || dx === vw - 1) {
+        mapData[i] = TILE.WALL;
+        mapCollision[i] = true;
+        mapHigh.add(i);
+      } else {
+        mapData[i] = TILE.FLOOR;
+        mapCollision[i] = false;
+      }
+    }
+
+  // village exits - decorative doors in walls (2 tiles wide, wooden)
+  const gates = [
+    { x: vx + 5, y: vy + vh - 1 },  // south exit (left door)
+    { x: vx + 6, y: vy + vh - 1 },  // south exit (right door)
+    { x: vx, y: vy + 3 },           // west exit (upper door)
+    { x: vx, y: vy + 4 },           // west exit (lower door)
+  ];
+  gates.forEach(g => {
+    const i = g.y * MAP_WIDTH + g.x;
+    mapData[i] = TILE.DOOR;
+    mapCollision[i] = false;
+    mapHigh.delete(i);
+  });
+  // add torch posts beside doors for decoration
+  const torchSpots = [
+    { x: vx + 4, y: vy + vh - 1 }, { x: vx + 7, y: vy + vh - 1 },
+    { x: vx + 1, y: vy + 3 }, { x: vx + 1, y: vy + 4 },
+  ];
+  torchSpots.forEach(t => {
+    const i = t.y * MAP_WIDTH + t.x;
+    if (mapData[i] === TILE.WALL) {
+      mapData[i] = TILE.FLOOR; // lighter pillar
+      mapCollision[i] = false;
+      mapHigh.delete(i);
+    }
+  });
+
+  // paths
+  function drawPath(x1, y1, x2, y2) {
+    let x = x1, y = y1;
+    while (x !== x2 || y !== y2) {
+      const i = y * MAP_WIDTH + x;
+      if (!mapCollision[i]) mapData[i] = TILE.PATH;
+      if (Math.abs(x - x2) > Math.abs(y - y2)) x += x < x2 ? 1 : -1;
+      else y += y < y2 ? 1 : -1;
+    }
+  }
+  drawPath(vx + 6, vy + vh, vx + 6, vy + vh + 15);
+  drawPath(vx + 6, vy + vh + 15, vx + 30, vy + vh + 15);
+  drawPath(vx + 30, vy + vh + 15, vx + 60, vy + vh + 25);
+  drawPath(vx - 4, vy + 4, vx - 4, vy - 10);
+  drawPath(vx - 4, vy - 10, vx - 30, vy - 10);
+
+  // dungeon area
+  const dx = 180, dy = 150, dw = 10, dh = 8;
+  drawPath(vx + 60, vy + vh + 25, dx + 5, dy + dh);
+  for (let dy2 = 0; dy2 < dh; dy2++)
+    for (let dx2 = 0; dx2 < dw; dx2++) {
+      const i = (dy + dy2) * MAP_WIDTH + (dx + dx2);
+      if (dy2 === 0 || dy2 === dh - 1 || dx2 === 0 || dx2 === dw - 1) {
+        mapData[i] = TILE.WALL;
+        mapCollision[i] = true;
+        mapHigh.add(i);
+      } else {
+        mapData[i] = TILE.FLOOR;
+        mapCollision[i] = false;
+      }
+    }
+  // dungeon entrance
+  {
+    const ei = dy * MAP_WIDTH + (dx + 5);
+    mapData[ei] = TILE.FLOOR; mapCollision[ei] = false; mapHigh.delete(ei);
+  }
+}
+
+// ==================== ENTITIES ====================
+let player = {
+  x: 41 * TILE_SIZE, y: 44 * TILE_SIZE,
+  gridX: 41, gridY: 44,
+  hp: 100, maxHp: 100,
+  mana: 50, maxMana: 50,
+  xp: 0, level: 1,
+  attackCooldown: 0,
+  invincibleTimer: 0,
+  orientation: 'down',
+  moving: false,
+  attacking: false,
+  dead: false,
+  respawnTimer: 0,
+  equipment: {},
+  combatStyle: 'melee',
+};
+
+let skills = {
+  attack: { xp: 0, level: 1 },
+  defense: { xp: 0, level: 1 },
+  strength: { xp: 0, level: 1 },
+  health: { xp: 0, level: 1 },
+  woodcutting: { xp: 0, level: 1 },
+  mining: { xp: 0, level: 1 },
+  fishing: { xp: 0, level: 1 },
+  foraging: { xp: 0, level: 1 },
+};
+
+function xpForLevel(lvl) { return Math.floor(83 * Math.pow(1.1, lvl - 1)); }
+
+let inventory = new Array(20).fill(null);
+let gold = 0;
+
+let mobs = [];
+let npcs = [];
+let groundItems = [];
+let projectiles = [];
+let resourceNodes = [];
+let floatingTexts = [];
+
+// ==================== SPAWN ENTITIES ====================
+function spawnMobs() {
+  const types = ['rat','skeleton','slime','bat','spider','wolf','zombie'];
+  const spawns = [
+    { x: 55, y: 55, type: 'rat', count: 8 },
+    { x: 45, y: 32, type: 'rat', count: 6 },
+    { x: 75, y: 70, type: 'skeleton', count: 5 },
+    { x: 160, y: 80, type: 'skeleton', count: 4 },
+    { x: 85, y: 65, type: 'slime', count: 5 },
+    { x: 180, y: 120, type: 'slime', count: 4 },
+    { x: 40, y: 28, type: 'rat', count: 5 },
+    { x: 120, y: 55, type: 'bat', count: 6 },
+    { x: 200, y: 90, type: 'bat', count: 5 },
+    { x: 100, y: 85, type: 'spider', count: 5 },
+    { x: 220, y: 140, type: 'spider', count: 4 },
+    { x: 65, y: 95, type: 'wolf', count: 5 },
+    { x: 150, y: 160, type: 'wolf', count: 4 },
+    { x: 80, y: 45, type: 'zombie', count: 4 },
+    { x: 140, y: 110, type: 'zombie', count: 3 },
+    { x: 250, y: 60, type: 'skeleton', count: 5 },
+    { x: 260, y: 160, type: 'rat', count: 6 },
+    { x: 300, y: 100, type: 'bat', count: 5 },
+  ];
+  spawns.forEach(s => {
+    for (let i = 0; i < s.count; i++) {
+      const m = {
+        type: s.type,
+        x: (s.x + Math.floor(Math.random() * 8 - 4)) * TILE_SIZE,
+        y: (s.y + Math.floor(Math.random() * 8 - 4)) * TILE_SIZE,
+        gridX: 0, gridY: 0, // computed
+        hp: { rat: 15, skeleton: 30, slime: 20, bat: 12, spider: 25, wolf: 35, zombie: 40 }[s.type] || 20,
+        maxHp: { rat: 15, skeleton: 30, slime: 20, bat: 12, spider: 25, wolf: 35, zombie: 40 }[s.type] || 20,
+        atk: { rat: 2, skeleton: 5, slime: 3, bat: 2, spider: 4, wolf: 6, zombie: 7 }[s.type] || 3,
+        def: { rat: 0, skeleton: 2, slime: 1, bat: 0, spider: 1, wolf: 2, zombie: 3 }[s.type] || 0,
+        xp: { rat: 10, skeleton: 25, slime: 15, bat: 8, spider: 20, wolf: 30, zombie: 35 }[s.type] || 10,
+        dropTable: getDropTable(s.type),
+        aggroRange: 5,
+        wanderTimer: 0,
+        wanderDir: { x: 0, y: 0 },
+        attackCooldown: 0,
+        dead: false,
+        deathTimer: 0,
+        orientation: 'down',
+        moving: false,
+      };
+      m.gridX = Math.floor(m.x / TILE_SIZE);
+      m.gridY = Math.floor(m.y / TILE_SIZE);
+      mobs.push(m);
+    }
+  });
+}
+
+function getDropTable(type) {
+  const tables = {
+    rat: [{ key: 'gold', count: 2, chance: 0.8 }, { key: 'bread', count: 1, chance: 0.3 }],
+    skeleton: [{ key: 'gold', count: 5, chance: 0.9 }, { key: 'arrow', count: 3, chance: 0.5 }, { key: 'potion_hp', count: 1, chance: 0.2 }],
+    slime: [{ key: 'gold', count: 3, chance: 0.7 }, { key: 'herb', count: 1, chance: 0.4 }],
+    bat: [{ key: 'gold', count: 2, chance: 0.6 }, { key: 'potion_mana', count: 1, chance: 0.3 }],
+    spider: [{ key: 'gold', count: 4, chance: 0.7 }, { key: 'herb', count: 1, chance: 0.5 }],
+    wolf: [{ key: 'gold', count: 6, chance: 0.8 }, { key: 'ore_copper', count: 1, chance: 0.3 }],
+    zombie: [{ key: 'gold', count: 8, chance: 0.9 }, { key: 'potion_hp', count: 1, chance: 0.4 }, { key: 'ring_power', count: 1, chance: 0.05 }],
+  };
+  return tables[type] || [];
+}
+
+function spawnNPCs() {
+  npcs = [
+    { type: 'elder', name: '村长', x: 40 * TILE_SIZE, y: 42 * TILE_SIZE, gridX: 40, gridY: 42,
+      dialogue: ['欢迎来到我们的村庄，年轻的冒险者！', '你愿意帮我们清理附近的老鼠吗？'],
+      quest: 'q1', shop: null },
+    { type: 'merchant', name: '商人', x: 43 * TILE_SIZE, y: 46 * TILE_SIZE, gridX: 43, gridY: 46,
+      dialogue: ['看看我的商品吧！从药水到武器应有尽有。'],
+      quest: null,
+      shop: ['potion_hp', 'potion_mana', 'bread', 'arrow', 'sword_bronze', 'shield_wood', 'helmet_bronze', 'boots_bronze'] },
+    { type: 'blacksmith', name: '铁匠', x: 37 * TILE_SIZE, y: 45 * TILE_SIZE, gridX: 37, gridY: 45,
+      dialogue: ['我需要木材来制作工具...', '如果你能帮我收集一些，我会给你一把好斧头。'],
+      quest: 'q2', shop: ['sword_iron', 'chestplate_bronze', 'legplates_bronze', 'pickaxe_bronze', 'axe_bronze', 'bow_wood'] },
+    { type: 'guard', name: '守卫', x: 47 * TILE_SIZE, y: 42 * TILE_SIZE, gridX: 47, gridY: 42,
+      dialogue: ['村庄东边有骷髅出没，你能帮我们处理吗？'],
+      quest: 'q3', shop: null },
+    { type: 'wizard', name: '巫师', x: 38 * TILE_SIZE, y: 36 * TILE_SIZE, gridX: 38, gridY: 36,
+      dialogue: ['我需要一些草药来制作魔法药水...', '在森林里可以找到它们。'],
+      quest: 'q4', shop: ['potion_hp', 'potion_mana', 'ring_power'] },
+  ];
+}
+
+function spawnResources() {
+  resourceNodes = [];
+  const treePositions = [];
+  for (let y = 10; y < MAP_HEIGHT - 10; y += 4) {
+    for (let x = 10; x < MAP_WIDTH - 10; x += 4) {
+      const i = y * MAP_WIDTH + x;
+      if (mapData[i] === TILE.GRASS && !mapCollision[i] && Math.random() < 0.55) {
+        treePositions.push({ x: x, y: y, type: Math.random() < 0.7 ? 'oak' : (Math.random() < 0.5 ? 'pine' : 'palm') });
+      }
+    }
+  }
+  // remove trees from village
+  const filtered = treePositions.filter(t => !(t.x >= 33 && t.x <= 49 && t.y >= 33 && t.y <= 50));
+  const selected = filtered.sort(() => Math.random() - 0.5).slice(0, 360);
+  selected.forEach(t => {
+    resourceNodes.push({
+      type: 'tree', treeType: t.type, x: t.x * TILE_SIZE, y: t.y * TILE_SIZE,
+      gridX: t.x, gridY: t.y, hp: 3, maxHp: 3, exhausted: false, respawnTimer: 0
+    });
+  });
+
+  const rockPositions = [];
+  for (let y = 30; y < MAP_HEIGHT - 5; y += 5) {
+    for (let x = 30; x < MAP_WIDTH - 5; x += 7) {
+      const i = y * MAP_WIDTH + x;
+      if (mapData[i] === TILE.GRASS && !mapCollision[i] && Math.random() < 0.3) {
+        rockPositions.push({ x, y });
+      }
+    }
+  }
+  const rSelected = rockPositions.sort(() => Math.random() - 0.5).slice(0, 90);
+  rSelected.forEach(r => {
+    resourceNodes.push({
+      type: 'rock', x: r.x * TILE_SIZE + 2, y: r.y * TILE_SIZE + 4,
+      gridX: r.x, gridY: r.y, hp: 5, maxHp: 5, exhausted: false, respawnTimer: 0
+    });
+  });
+}
+
+// ==================== RENDERING ====================
+function resizeCanvases() {
+  screenW = window.innerWidth;
+  screenH = window.innerHeight;
+  const gridW = Math.ceil(screenW / TILE_SIZE / ZOOM) + 4;
+  const gridH = Math.ceil(screenH / TILE_SIZE / ZOOM) + 4;
+  canvasW = Math.ceil(gridW * TILE_SIZE * ZOOM);
+  canvasH = Math.ceil(gridH * TILE_SIZE * ZOOM);
+  [canvasBg, canvasFg, canvasEnt, canvasEntF, canvasText, canvasCursor, canvasOverlay].forEach(c => {
+    c.width = canvasW; c.height = canvasH; c.style.width = screenW + 'px'; c.style.height = screenH + 'px';
+  });
+  [ctxBg, ctxFg, ctxEnt, ctxEntF, ctxText, ctxCursor, ctxOverlay].forEach(ctx => {
+    ctx.imageSmoothingEnabled = false;
+  });
+}
+
+function setCamera(ctx) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.translate(Math.floor(-camera.x * ZOOM), Math.floor(-camera.y * ZOOM));
+}
+
+function drawTileMap() {
+  ctxBg.save(); setCamera(ctxBg);
+  ctxFg.save(); setCamera(ctxFg);
+  const startX = Math.floor(camera.x / TILE_SIZE) - 2;
+  const startY = Math.floor(camera.y / TILE_SIZE) - 2;
+  const endX = startX + Math.ceil(screenW / TILE_SIZE / ZOOM) + 4;
+  const endY = startY + Math.ceil(screenH / TILE_SIZE / ZOOM) + 4;
+
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) continue;
+      const tile = mapData[y * MAP_WIDTH + x];
+      const cols = tileColors[tile] || tileColors[TILE.GRASS];
+      const color = cols[Math.floor(Math.abs(x * 7 + y * 13) % cols.length)];
+      const dx = x * TILE_SIZE, dy = y * TILE_SIZE;
+      const ctx2 = mapHigh.has(y * MAP_WIDTH + x) ? ctxFg : ctxBg;
+      ctx2.fillStyle = color;
+      ctx2.fillRect(dx * ZOOM, dy * ZOOM, TILE_SIZE * ZOOM + 1, TILE_SIZE * ZOOM + 1);
+      if (tile === TILE.FLOWER) {
+        ctx2.fillStyle = '#e74c3c';
+        ctx2.fillRect((dx + 6) * ZOOM, (dy + 4) * ZOOM, 4 * ZOOM, 4 * ZOOM);
+        ctx2.fillStyle = '#f1c40f';
+        ctx2.fillRect((dx + 7) * ZOOM, (dy + 5) * ZOOM, 2 * ZOOM, 2 * ZOOM);
+      }
+      if (tile === TILE.DIRT) {
+        ctx2.fillStyle = '#6B3410';
+        ctx2.fillRect((dx + 2) * ZOOM, (dy + 4) * ZOOM, 3 * ZOOM, 2 * ZOOM);
+        ctx2.fillRect((dx + 8) * ZOOM, (dy + 8) * ZOOM, 4 * ZOOM, 2 * ZOOM);
+      }
+      if (tile === TILE.DOOR) {
+        ctx2.fillStyle = '#6B3410';
+        ctx2.fillRect(dx * ZOOM, dy * ZOOM, TILE_SIZE * ZOOM + 1, TILE_SIZE * ZOOM + 1);
+        const pulse = Math.sin(gameTime * 0.005) * 0.15 + 0.85;
+        ctx2.fillStyle = `rgba(139,69,19,${pulse})`;
+        ctx2.fillRect((dx + 2) * ZOOM, (dy + 1) * ZOOM, 12 * ZOOM, 14 * ZOOM);
+        ctx2.fillStyle = '#A0522D';
+        ctx2.fillRect((dx + 4) * ZOOM, (dy + 2) * ZOOM, 8 * ZOOM, 12 * ZOOM);
+        ctx2.fillStyle = '#D4A574'; // door knob
+        ctx2.fillRect((dx + 11) * ZOOM, (dy + 7) * ZOOM, 2 * ZOOM, 2 * ZOOM);
+        ctx2.fillStyle = '#8B4513';
+        ctx2.fillRect((dx + 2) * ZOOM, (dy + 1) * ZOOM, 12 * ZOOM, 2 * ZOOM);
+        ctx2.fillRect((dx + 2) * ZOOM, (dy + 13) * ZOOM, 12 * ZOOM, 2 * ZOOM);
+        // left and right frame posts
+        ctx2.fillRect((dx + 1) * ZOOM, (dy + 1) * ZOOM, 2 * ZOOM, 14 * ZOOM);
+        ctx2.fillRect((dx + 13) * ZOOM, (dy + 1) * ZOOM, 2 * ZOOM, 14 * ZOOM);
+        // hinge marks
+        ctx2.fillStyle = '#5C4033';
+        ctx2.fillRect((dx + 3) * ZOOM, (dy + 4) * ZOOM, 1 * ZOOM, 2 * ZOOM);
+        ctx2.fillRect((dx + 3) * ZOOM, (dy + 10) * ZOOM, 1 * ZOOM, 2 * ZOOM);
+      }
+    }
+  }
+  ctxBg.restore(); ctxFg.restore();
+}
+
+function drawEntities() {
+  ctxEnt.save(); setCamera(ctxEnt);
+  ctxEntF.save(); setCamera(ctxEntF);
+
+  const allEntities = [...resourceNodes.filter(r => r.type === 'rock' || (r.type === 'tree' && !r.exhausted)),
+    ...mobs.filter(m => !m.dead), ...npcs,
+    ...groundItems];
+
+  // Sort by Y for depth
+  allEntities.sort((a, b) => a.y - b.y);
+
+  allEntities.forEach(e => {
+    if (e.type === 'tree') drawTree(e);
+    else if (e.type === 'rock') drawRock(e);
+    else if (e.type && e.type.length > 1 && !e.name && e.hp !== undefined) drawMob(e);
+    else if (e.name && e.dialogue) drawNPC(e);
+    else if (e.itemKey) drawGroundItem(e);
+  });
+
+  // Draw player
+  if (!player.dead) drawPlayer();
+
+  // Draw projectiles
+  projectiles.forEach(p => drawProjectile(p));
+
+  // Floating texts
+  floatingTexts.forEach(ft => {
+    ctxText.save(); setCamera(ctxText);
+    ctxText.globalAlpha = ft.alpha;
+    ctxText.font = `bold ${11 * ZOOM}px "Courier New"`;
+    ctxText.fillStyle = ft.color;
+    ctxText.textAlign = 'center';
+    ctxText.fillText(ft.text, (ft.x + 8) * ZOOM, ft.y * ZOOM);
+    ctxText.restore();
+  });
+
+  // Health bars
+  [...mobs.filter(m => !m.dead && m.hp < m.maxHp)].forEach(m => {
+    ctxText.save(); setCamera(ctxText);
+    const barW = 16 * ZOOM, barH = 2 * ZOOM;
+    const hx = (m.x - 4) * ZOOM, hy = (m.y - 10) * ZOOM;
+    ctxText.fillStyle = '#c0392b';
+    ctxText.fillRect(hx, hy, barW, barH);
+    ctxText.fillStyle = '#e74c3c';
+    ctxText.fillRect(hx, hy, barW * (m.hp / m.maxHp), barH);
+    ctxText.restore();
+  });
+
+  ctxEnt.restore(); ctxEntF.restore();
+}
+
+function drawPlayer() {
+  const frames = playerSprite();
+  const dir = player.orientation;
+  const prefix = player.attacking ? 'atk' : (player.moving ? 'walk' : 'idle');
+  const key = prefix + '_' + dir;
+  const sprite = frames[key] || frames['idle_down'];
+  const ox = (player.x - 4) * ZOOM, oy = (player.y - 12) * ZOOM;
+
+  // shadow
+  ctxEnt.fillStyle = 'rgba(0,0,0,0.3)';
+  ctxEnt.beginPath();
+  ctxEnt.ellipse((player.x + 4) * ZOOM, (player.y + 4) * ZOOM, 6 * ZOOM, 3 * ZOOM, 0, 0, Math.PI * 2);
+  ctxEnt.fill();
+
+  ctxEnt.drawImage(sprite, ox, oy, 16 * ZOOM, 20 * ZOOM);
+
+  // Equipment overlay
+  const eq = player.equipment;
+  if (eq.weapon) {
+    const eqSprite = itemSprite(ITEMS[eq.weapon].sprite);
+    if (eqSprite && eqSprite.idle) {
+      ctxEntF.drawImage(eqSprite.idle, (player.x + 8) * ZOOM, (player.y - 6) * ZOOM, 10 * ZOOM, 10 * ZOOM);
+    }
+  }
+}
+
+function drawMob(m) {
+  const frames = mobSprite(m.type);
+  const key = m.moving ? 'walk_down' : 'idle_down';
+  const sprite = frames[key] || frames['idle_down'];
+  const ox = (m.x - 4) * ZOOM, oy = (m.y - 10) * ZOOM;
+
+  ctxEnt.fillStyle = 'rgba(0,0,0,0.3)';
+  ctxEnt.beginPath();
+  ctxEnt.ellipse((m.x + 4) * ZOOM, (m.y + 4) * ZOOM, 5 * ZOOM, 2 * ZOOM, 0, 0, Math.PI * 2);
+  ctxEnt.fill();
+
+  ctxEnt.drawImage(sprite, ox, oy, 16 * ZOOM, 18 * ZOOM);
+}
+
+function drawNPC(n) {
+  const frames = npcSprite(n.type);
+  const sprite = frames['idle_down'];
+  const ox = (n.x - 4) * ZOOM, oy = (n.y - 12) * ZOOM;
+
+  ctxEnt.fillStyle = 'rgba(0,0,0,0.3)';
+  ctxEnt.beginPath();
+  ctxEnt.ellipse((n.x + 4) * ZOOM, (n.y + 4) * ZOOM, 5 * ZOOM, 2.5 * ZOOM, 0, 0, Math.PI * 2);
+  ctxEnt.fill();
+
+  ctxEnt.drawImage(sprite, ox, oy, 16 * ZOOM, 20 * ZOOM);
+
+  // name
+  ctxText.save(); setCamera(ctxText);
+  ctxText.font = `${10 * ZOOM}px "Courier New"`;
+  ctxText.fillStyle = '#3498db';
+  ctxText.textAlign = 'center';
+  ctxText.fillText(n.name, (n.x + 8) * ZOOM, (n.y - 16) * ZOOM);
+  ctxText.restore();
+}
+
+function drawTree(t) {
+  const frames = treeSprite(t.treeType);
+  const sprite = frames['idle'];
+  const ox = (t.x - 12) * ZOOM, oy = (t.y - 24) * ZOOM;
+  ctxEnt.drawImage(sprite, ox, oy, 32 * ZOOM, 32 * ZOOM);
+}
+
+function drawRock(r) {
+  const sprite = rockSprite();
+  if (r.exhausted) return;
+  const ox = (r.x - 6) * ZOOM, oy = (r.y - 6) * ZOOM;
+  ctxEnt.drawImage(sprite.idle, ox, oy, 20 * ZOOM, 16 * ZOOM);
+}
+
+function drawGroundItem(gi) {
+  const sprite = itemSprite(gi.itemKey);
+  if (!sprite || !sprite.idle) return;
+  const ox = (gi.x - 4) * ZOOM, oy = (gi.y - 4) * ZOOM;
+  ctxEnt.drawImage(sprite.idle, ox, oy, 12 * ZOOM, 12 * ZOOM);
+  ctxText.save(); setCamera(ctxText);
+  ctxText.font = `${9 * ZOOM}px "Courier New"`;
+  ctxText.fillStyle = '#FFD700';
+  ctxText.textAlign = 'center';
+  ctxText.fillText(ITEMS[gi.itemKey]?.name || gi.itemKey, (gi.x + 4) * ZOOM, (gi.y - 6) * ZOOM);
+  ctxText.restore();
+}
+
+function drawProjectile(p) {
+  const sprite = projectileSprite();
+  ctxEnt.drawImage(sprite.idle, (p.x - 4) * ZOOM, (p.y - 4) * ZOOM, 8 * ZOOM, 8 * ZOOM);
+}
+
+function drawPlayerHUD() {
+  if (player.dead) return;
+  ctxText.save();
+  setCamera(ctxText);
+  // Player name
+  ctxText.font = `bold ${10 * ZOOM}px "Courier New"`;
+  ctxText.fillStyle = '#f1c40f';
+  ctxText.textAlign = 'center';
+  ctxText.fillText('冒险者', (player.x + 8) * ZOOM, (player.y - 18) * ZOOM);
+  ctxText.font = `${9 * ZOOM}px "Courier New"`;
+  ctxText.fillText(`Lv.${player.level}`, (player.x + 8) * ZOOM, (player.y - 7) * ZOOM);
+  ctxText.restore();
+}
+
+function drawCursor() {
+  ctxCursor.clearRect(0, 0, canvasW, canvasH);
+  if (!mouse.down && !mouse.rightDown) {
+    const gx = Math.floor((mouse.x + camera.x) / TILE_SIZE);
+    const gy = Math.floor((mouse.y + camera.y) / TILE_SIZE);
+    if (gx >= 0 && gy >= 0 && gx < MAP_WIDTH && gy < MAP_HEIGHT) {
+      const i = gy * MAP_WIDTH + gx;
+      ctxCursor.save(); setCamera(ctxCursor);
+      ctxCursor.strokeStyle = mapCollision[i] ? 'rgba(230,0,0,0.7)' : 'rgba(255,255,255,0.5)';
+      ctxCursor.lineWidth = 2 * ZOOM;
+      ctxCursor.strokeRect(gx * TILE_SIZE * ZOOM + 2, gy * TILE_SIZE * ZOOM + 2, TILE_SIZE * ZOOM - 4, TILE_SIZE * ZOOM - 4);
+      ctxCursor.restore();
+    }
+  }
+}
+
+function drawMinimap() {
+  const mw = 140, mh = 140;
+  ctxMini.clearRect(0, 0, mw, mh);
+  const scaleX = mw / MAP_WIDTH, scaleY = mh / MAP_HEIGHT;
+  for (let i = 0; i < MAP_WIDTH * MAP_HEIGHT; i++) {
+    const x = (i % MAP_WIDTH) * scaleX, y = Math.floor(i / MAP_WIDTH) * scaleY;
+    const t = mapData[i];
+    if (t === TILE.WATER || t === TILE.DEEP_WATER) ctxMini.fillStyle = '#3388cc';
+    else if (t === TILE.SAND) ctxMini.fillStyle = '#e8d5a3';
+    else if (t === TILE.WALL || t === TILE.FLOOR) ctxMini.fillStyle = '#8B7355';
+    else if (t === TILE.PATH) ctxMini.fillStyle = '#c4a46c';
+    else if (t === TILE.DOOR) ctxMini.fillStyle = '#A0522D';
+    else ctxMini.fillStyle = '#4a8c3f';
+    ctxMini.fillRect(x, y, Math.ceil(scaleX), Math.ceil(scaleY));
+  }
+  // player dot
+  ctxMini.fillStyle = '#f1c40f';
+  ctxMini.fillRect(player.gridX * scaleX - 1, player.gridY * scaleY - 1, 3, 3);
+  // mob dots
+  ctxMini.fillStyle = '#e74c3c';
+  mobs.filter(m => !m.dead).forEach(m => {
+    ctxMini.fillRect(m.gridX * scaleX, m.gridY * scaleY, 1, 1);
+  });
+  // NPC dots
+  ctxMini.fillStyle = '#3498db';
+  npcs.forEach(n => {
+    ctxMini.fillRect(n.gridX * scaleX, n.gridY * scaleY, 1, 1);
+  });
+}
+
+// ==================== GAME LOGIC ====================
+function updatePlayer(dt) {
+  if (player.dead) {
+    player.respawnTimer -= dt;
+    if (player.respawnTimer <= 0) respawnPlayer();
+    return;
+  }
+  if (player.attackCooldown > 0) player.attackCooldown -= dt;
+  if (player.invincibleTimer > 0) player.invincibleTimer -= dt;
+
+  let moving = false;
+  let dx = 0, dy = 0;
+
+  if (keys['w'] || keys['arrowup']) { dy = -1; player.orientation = 'up'; }
+  else if (keys['s'] || keys['arrowdown']) { dy = 1; player.orientation = 'down'; }
+  if (keys['a'] || keys['arrowleft']) { dx = -1; player.orientation = 'left'; }
+  else if (keys['d'] || keys['arrowright']) { dx = 1; player.orientation = 'right'; }
+
+  if (dx !== 0 || dy !== 0) {
+    moving = true;
+    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+    const speed = 2.5;
+    const nx = player.x + dx * speed;
+    const ny = player.y + dy * speed;
+    if (!isCollidingWorld(nx, ny, 8, 10)) {
+      player.x = nx;
+      player.y = ny;
+    } else if (!isCollidingWorld(player.x + dx * speed, player.y, 8, 10)) {
+      player.x += dx * speed;
+    } else if (!isCollidingWorld(player.x, player.y + dy * speed, 8, 10)) {
+      player.y += dy * speed;
+    }
+  }
+
+  // pathfinding follow
+  if (!moving && pathQueue.length > 0) {
+    const target = pathQueue[0];
+    const tdx = target.x - player.x;
+    const tdy = target.y - player.y;
+    const dist = Math.sqrt(tdx * tdx + tdy * tdy);
+    if (dist < 4) {
+      pathQueue.shift();
+    } else {
+      const speed = 2.5;
+      const nx = player.x + (tdx / dist) * speed;
+      const ny = player.y + (tdy / dist) * speed;
+      if (!isCollidingWorld(nx, ny, 8, 10)) {
+        player.x = nx; player.y = ny; moving = true;
+        player.orientation = Math.abs(tdx) > Math.abs(tdy) ? (tdx > 0 ? 'right' : 'left') : (tdy > 0 ? 'down' : 'up');
+      } else {
+        pathQueue.shift();
+      }
+    }
+  }
+
+  player.gridX = Math.floor((player.x + 8) / TILE_SIZE);
+  player.gridY = Math.floor((player.y + 14) / TILE_SIZE);
+  player.moving = moving;
+  if (!moving && pathQueue.length === 0) player.attacking = false;
+  player.x = Math.max(0, Math.min(player.x, MAP_WIDTH * TILE_SIZE - 8));
+  player.y = Math.max(0, Math.min(player.y, MAP_HEIGHT * TILE_SIZE - 8));
+
+  // auto pickup
+  groundItems.forEach(gi => {
+    const dist = Math.hypot(player.x - gi.x, player.y - gi.y);
+    if (dist < 20) pickupItem(gi);
+  });
+  groundItems = groundItems.filter(gi => !gi.picked);
+
+  // update camera
+  camera.x = player.x + 8 - screenW / 2 / ZOOM;
+  camera.y = player.y + 10 - screenH / 2 / ZOOM;
+  camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH * TILE_SIZE - screenW / ZOOM));
+  camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT * TILE_SIZE - screenH / ZOOM));
+}
+
+function isCollidingWorld(x, y, w, h) {
+  const gx1 = Math.floor((x - w / 2) / TILE_SIZE);
+  const gy1 = Math.floor((y - h / 2) / TILE_SIZE);
+  const gx2 = Math.floor((x + w / 2) / TILE_SIZE);
+  const gy2 = Math.floor((y + h / 2) / TILE_SIZE);
+  for (let gy = gy1; gy <= gy2; gy++)
+    for (let gx = gx1; gx <= gx2; gx++) {
+      if (gx < 0 || gy < 0 || gx >= MAP_WIDTH || gy >= MAP_HEIGHT) return true;
+      if (mapCollision[gy * MAP_WIDTH + gx]) return true;
+    }
+  // check resource nodes
+  for (const r of resourceNodes) {
+    if (r.exhausted) continue;
+    const rx = r.gridX * TILE_SIZE, ry = r.gridY * TILE_SIZE;
+    if (x + w / 2 > rx && x - w / 2 < rx + TILE_SIZE &&
+        y + h / 2 > ry && y - h / 2 < ry + TILE_SIZE) return true;
+  }
+  return false;
+}
+
+function updateMobs(dt) {
+  mobs.forEach(m => {
+    if (m.dead) {
+      m.deathTimer -= dt;
+      if (m.deathTimer <= 0) {
+        const idx = mobs.indexOf(m);
+        if (idx >= 0) mobs.splice(idx, 1);
+      }
+      return;
+    }
+    if (m.attackCooldown > 0) m.attackCooldown -= dt;
+
+    const pdx = player.x - m.x, pdy = player.y - m.y;
+    const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
+
+    if (!player.dead && pDist < m.aggroRange * TILE_SIZE && pDist > 10) {
+      const speed = 1.8;
+      const nx = m.x + (pdx / pDist) * speed;
+      const ny = m.y + (pdy / pDist) * speed;
+      if (!isCollidingWorld(nx, ny, 8, 8) && !isNearOtherMob(m, nx, ny)) {
+        m.x = nx; m.y = ny;
+      }
+      m.moving = true;
+    } else if (!player.dead && pDist <= 10 && m.attackCooldown <= 0) {
+      m.attackCooldown = 800;
+      const dmg = Math.max(1, m.atk - getPlayerDef());
+      if (player.invincibleTimer <= 0) {
+        player.hp -= dmg;
+        player.invincibleTimer = 300;
+        addFloatingText(m.x + 8, m.y - 8, '-' + dmg, '#e74c3c');
+        addChatMsg(`{damage}${m.type} 对你造成了 ${dmg} 点伤害！`);
+        if (player.hp <= 0) killPlayer();
+      }
+      m.moving = false;
+    } else {
+      m.wanderTimer -= dt;
+      if (m.wanderTimer <= 0) {
+        m.wanderTimer = 1500 + Math.random() * 2000;
+        m.wanderDir = { x: (Math.random() - 0.5) * 1.5, y: (Math.random() - 0.5) * 1.5 };
+      }
+      const nx = m.x + m.wanderDir.x, ny = m.y + m.wanderDir.y;
+      if (!isCollidingWorld(nx, ny, 8, 8)) {
+        m.x = nx; m.y = ny;
+      }
+      m.moving = Math.abs(m.wanderDir.x) > 0.1 || Math.abs(m.wanderDir.y) > 0.1;
+    }
+    m.gridX = Math.floor((m.x + 8) / TILE_SIZE);
+    m.gridY = Math.floor((m.y + 14) / TILE_SIZE);
+  });
+}
+
+function isNearOtherMob(self, nx, ny) {
+  for (const m of mobs) {
+    if (m === self || m.dead) continue;
+    if (Math.hypot(nx - m.x, ny - m.y) < 12) return true;
+  }
+  return false;
+}
+
+function updateProjectiles(dt) {
+  projectiles.forEach(p => {
+    p.x += p.vx * dt * 0.06;
+    p.y += p.vy * dt * 0.06;
+    p.life -= dt;
+    if (p.life <= 0 || isCollidingWorld(p.x, p.y, 4, 4)) {
+      p.dead = true;
+    }
+    // hit mobs
+    for (const m of mobs) {
+      if (m.dead) continue;
+      if (Math.hypot(p.x - m.x, p.y - m.y) < 12 && !m.dead) {
+        const dmg = p.damage;
+        m.hp -= dmg;
+        addFloatingText(m.x + 8, m.y - 8, '-' + dmg, '#e74c3c');
+        if (m.hp <= 0) killMob(m);
+        p.dead = true;
+        break;
+      }
+    }
+  });
+  projectiles = projectiles.filter(p => !p.dead);
+}
+
+function updateFloatingTexts(dt) {
+  floatingTexts.forEach(ft => {
+    ft.y -= dt * 0.03;
+    ft.alpha -= dt * 0.0012;
+  });
+  floatingTexts = floatingTexts.filter(ft => ft.alpha > 0);
+}
+
+function killMob(m) {
+  m.dead = true;
+  m.deathTimer = 1500;
+  addFloatingText(m.x + 8, m.y - 8, 'KO!', '#f1c40f');
+  addChatMsg(`{system}你击败了 ${m.type}！(+${m.xp} XP)`);
+  addXp(m.xp);
+  addSkillXp('attack', m.xp * 0.3);
+  addSkillXp('strength', m.xp * 0.2);
+  addSkillXp('defense', m.xp * 0.2);
+  addSkillXp('health', m.xp * 0.1);
+
+  // drops
+  m.dropTable.forEach(drop => {
+    if (Math.random() < drop.chance) {
+      groundItems.push({
+        itemKey: drop.key, count: drop.count,
+        x: m.x + Math.random() * 16 - 8, y: m.y + Math.random() * 16 - 8,
+      });
+    }
+  });
+
+  // quest progress
+  Object.values(QUESTS).forEach(q => {
+    if (q.completed) return;
+    q.objectives.forEach(obj => {
+      if (obj.type === 'kill' && obj.target === m.type && obj.current < obj.count) {
+        obj.current++;
+        if (obj.current >= obj.count) addChatMsg(`{system}任务进度: ${q.name} 完成!`);
+      }
+    });
+  });
+}
+
+function killPlayer() {
+  player.hp = 0;
+  player.dead = true;
+  player.respawnTimer = 3000;
+  addChatMsg('{damage}你被击败了... 3秒后复活。');
+  pathQueue = [];
+}
+
+function respawnPlayer() {
+  player.dead = false;
+  recalcPlayerStats();
+  player.hp = player.maxHp;
+  player.mana = player.maxMana;
+  player.x = 41 * TILE_SIZE;
+  player.y = 44 * TILE_SIZE;
+  player.gridX = 41; player.gridY = 44;
+  addChatMsg('{system}你复活了！');
+}
+
+function attackTarget() {
+  if (player.dead || player.attackCooldown > 0) return;
+  player.attackCooldown = 600;
+  player.attacking = true;
+
+  const weapon = player.equipment.weapon ? ITEMS[player.equipment.weapon] : null;
+  const isRanged = weapon && weapon.ranged;
+  const baseDmg = 3 + (weapon ? weapon.atk : 0) + Math.floor(skills.strength.level * 0.5);
+
+  if (isRanged) {
+    // ranged attack
+    const mx = player.x + 8 + (player.orientation === 'right' ? 20 : player.orientation === 'left' ? -20 : 0);
+    const my = player.y + 8 + (player.orientation === 'down' ? 20 : player.orientation === 'up' ? -20 : 0);
+    projectiles.push({
+      x: player.x + 8, y: player.y + 8,
+      vx: (mx - player.x - 8) / 5, vy: (my - player.y - 8) / 5,
+      life: 600, damage: baseDmg,
+    });
+  } else {
+    let closestMob = null, closestDist = 28;
+    for (const m of mobs) {
+      if (m.dead) continue;
+      const dist = Math.hypot(player.x + 8 - m.x - 4, player.y + 10 - m.y - 4);
+      if (dist < closestDist) { closestDist = dist; closestMob = m; }
+    }
+    if (closestMob) {
+      const dmg = Math.max(1, baseDmg + Math.floor(Math.random() * 3));
+      closestMob.hp -= dmg;
+      addFloatingText(closestMob.x + 8, closestMob.y - 8, '-' + dmg, '#e74c3c');
+      if (closestMob.hp <= 0) killMob(closestMob);
+
+      // skill xp
+      addSkillXp('attack', 2);
+      addSkillXp('strength', 1);
+    }
+
+    // also check resources
+    for (const r of resourceNodes) {
+      if (r.exhausted) continue;
+      const dist = Math.hypot(player.x + 8 - r.x - 8, player.y + 10 - r.y - 8);
+      if (dist < 28) {
+        r.hp--;
+        addFloatingText(r.x + 8, r.y - 8, '-1', '#f39c12');
+        if (r.hp <= 0) harvestResource(r);
+        break;
+      }
+    }
+  }
+}
+
+function harvestResource(r) {
+  r.exhausted = true;
+  r.respawnTimer = 15000;
+  if (r.type === 'tree') {
+    const count = 1 + Math.floor(Math.random() * 2);
+    addToInventory('wood', count);
+    addSkillXp('woodcutting', 10);
+    addChatMsg(`{item}你获得了 ${count}x 木材！`);
+    addFloatingText(r.x + 8, r.y - 8, `+${count} 木材`, '#8B4513');
+    // quest check
+    Object.values(QUESTS).forEach(q => {
+      if (q.completed) return;
+      q.objectives.forEach(obj => {
+        if (obj.type === 'collect' && obj.target === 'wood') obj.current += count;
+      });
+    });
+  } else if (r.type === 'rock') {
+    const count = 1 + Math.floor(Math.random() * 2);
+    addToInventory('ore_copper', count);
+    addSkillXp('mining', 12);
+    addChatMsg(`{item}你获得了 ${count}x 铜矿石！`);
+    addFloatingText(r.x + 8, r.y - 8, `+${count} 铜矿`, '#7f8c8d');
+  }
+}
+
+function addToInventory(key, count = 1) {
+  // stack existing
+  for (let i = 0; i < inventory.length; i++) {
+    if (inventory[i] && inventory[i].key === key) {
+      inventory[i].count += count;
+      return;
+    }
+  }
+  // find empty slot
+  for (let i = 0; i < inventory.length; i++) {
+    if (!inventory[i]) {
+      inventory[i] = { key, count };
+      return;
+    }
+  }
+  addChatMsg('{system}背包已满！');
+}
+
+function pickupItem(gi) {
+  addToInventory(gi.itemKey, gi.count);
+  addChatMsg(`{item}你拾取了 ${ITEMS[gi.itemKey]?.name || gi.itemKey} x${gi.count}`);
+  gi.picked = true;
+}
+
+function addXp(amount) {
+  player.xp += amount;
+  const needed = xpForLevel(player.level);
+  while (player.xp >= needed) {
+    player.xp -= needed;
+    player.level++;
+    recalcPlayerStats();
+    addChatMsg(`{xp}🎉 升级！你现在是 Lv.${player.level}！HP:${player.maxHp} Mana:${player.maxMana}`);
+    addFloatingText(player.x + 8, player.y - 20, 'LEVEL UP!', '#f1c40f');
+  }
+}
+
+function addSkillXp(skill, amount) {
+  skills[skill].xp += amount;
+  const needed = xpForLevel(skills[skill].level);
+  if (skills[skill].xp >= needed) {
+    skills[skill].xp -= needed;
+    skills[skill].level++;
+    addChatMsg(`{xp}⭐ ${skill} 技能升级！现在是 Lv.${skills[skill].level}`);
+  }
+}
+
+function addFloatingText(x, y, text, color) {
+  floatingTexts.push({ x, y, text, color, alpha: 1 });
+}
+
+function addChatMsg(msg) {
+  const cls = msg.startsWith('{damage}') ? 'damage' : msg.startsWith('{heal}') ? 'heal' :
+    msg.startsWith('{xp}') ? 'xp' : msg.startsWith('{item}') ? 'item' :
+    msg.startsWith('{npc}') ? 'npc' : 'system';
+  const text = msg.replace(/^\{[^}]+\}/, '');
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  if (chatBox.children.length > 50) chatBox.removeChild(chatBox.firstChild);
+}
+
+// ==================== UI ====================
+function updateUI() {
+  document.querySelector('#hp-bar .stat-bar-inner').style.width = (player.hp / player.maxHp * 100) + '%';
+  document.querySelector('#hp-bar .stat-text').textContent = Math.ceil(player.hp) + '/' + player.maxHp;
+  document.querySelector('#mana-bar .stat-bar-inner').style.width = (player.mana / player.maxMana * 100) + '%';
+  document.querySelector('#mana-bar .stat-text').textContent = Math.ceil(player.mana) + '/' + player.maxMana;
+  const xpNeed = xpForLevel(player.level);
+  document.querySelector('#xp-bar .stat-bar-inner').style.width = (player.xp / xpNeed * 100) + '%';
+  document.querySelector('#xp-bar .stat-text').textContent = Math.floor(player.xp) + '/' + xpNeed;
+}
+
+function showModal(title, contentFn) {
+  modalTitle.textContent = title;
+  modalBody.innerHTML = '';
+  contentFn(modalBody);
+  modalOverlay.style.display = 'flex';
+  currentModal = title;
+}
+
+function hideModal() {
+  modalOverlay.style.display = 'none';
+  currentModal = null;
+}
+
+function showInventory() {
+  showModal('物品栏', (body) => {
+    const grid = document.createElement('div');
+    grid.className = 'inventory-grid';
+    for (let i = 0; i < 20; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'inv-slot';
+      slot.title = inventory[i] ? `${ITEMS[inventory[i].key]?.name || inventory[i].key} x${inventory[i].count}` : '空';
+      if (inventory[i]) {
+        const sprite = itemSprite(inventory[i].key);
+        if (sprite && sprite.idle) {
+          const c = sprite.idle;
+          const img = document.createElement('canvas');
+          img.width = 12; img.height = 12;
+          img.getContext('2d').drawImage(c, 0, 0);
+          img.style.width = '32px'; img.style.height = '32px';
+          img.style.imageRendering = 'pixelated';
+          slot.appendChild(img);
+        }
+        const cnt = document.createElement('span');
+        cnt.className = 'count';
+        cnt.textContent = inventory[i].count;
+        slot.appendChild(cnt);
+      }
+      slot.addEventListener('click', () => handleInventoryClick(i));
+      slot.addEventListener('contextmenu', (e) => { e.preventDefault(); handleInventoryRightClick(i); });
+      grid.appendChild(slot);
+    }
+    body.appendChild(grid);
+    const goldDiv = document.createElement('div');
+    goldDiv.style.cssText = 'margin-top:8px;color:#FFD700;font-size:12px';
+    goldDiv.textContent = `💰 金币: ${gold}`;
+    body.appendChild(goldDiv);
+  });
+}
+
+function handleInventoryClick(i) {
+  if (!inventory[i]) return;
+  const item = ITEMS[inventory[i].key];
+  if (!item) return;
+  if (item.type === 'consumable') {
+    if (item.heal) {
+      player.hp = Math.min(player.maxHp, player.hp + item.heal);
+      addChatMsg(`{heal}使用了 ${item.name}，恢复了 ${item.heal} HP`);
+      addFloatingText(player.x + 8, player.y - 20, '+' + item.heal, '#2ecc71');
+    }
+    if (item.healMana) {
+      player.mana = Math.min(player.maxMana, player.mana + item.healMana);
+      addChatMsg(`{heal}使用了 ${item.name}，恢复了 ${item.healMana} Mana`);
+    }
+    inventory[i].count--;
+    if (inventory[i].count <= 0) inventory[i] = null;
+    if (currentModal === '物品栏') showInventory();
+    updateHotbar();
+  } else if (item.type === 'weapon' || item.type === 'equipment') {
+    equipItem(i);
+  }
+}
+
+function handleInventoryRightClick(i) {
+  if (!inventory[i]) return;
+  // drop item
+  const item = inventory[i];
+  groundItems.push({
+    itemKey: item.key, count: item.count,
+    x: player.x + Math.random() * 20 - 10, y: player.y + Math.random() * 20 - 10,
+  });
+  addChatMsg(`{system}丢弃了 ${ITEMS[item.key]?.name || item.key} x${item.count}`);
+  inventory[i] = null;
+  if (currentModal === '物品栏') showInventory();
+}
+
+function equipItem(invIdx) {
+  const item = inventory[invIdx];
+  const data = ITEMS[item.key];
+  if (!data || !data.equipSlot) return;
+  const slot = data.equipSlot;
+  // unequip current
+  if (player.equipment[slot]) {
+    addToInventory(player.equipment[slot], 1);
+  }
+  player.equipment[slot] = item.key;
+  inventory[invIdx].count--;
+  if (inventory[invIdx].count <= 0) inventory[invIdx] = null;
+  addChatMsg(`{system}装备了 ${data.name}`);
+  if (currentModal === '物品栏') showInventory();
+  if (currentModal === '装备') showEquipment();
+  updateHotbar();
+}
+
+function showEquipment() {
+  showModal('⚔ 装备', (body) => {
+    const container = document.createElement('div');
+    container.style.cssText = 'display:flex;gap:16px;flex-wrap:wrap';
+    // Left: base equipment
+    const baseBlock = document.createElement('div');
+    baseBlock.innerHTML = '<div style="color:#888;font-size:10px;margin-bottom:4px">普通装备</div>';
+    const slots = document.createElement('div');
+    slots.className = 'equip-slots';
+    const eqSlots = [
+      { slot: 'weapon', label: '武器' }, { slot: 'shield', label: '盾牌' },
+      { slot: 'helmet', label: '头盔' }, { slot: 'chestplate', label: '胸甲' },
+      { slot: 'legplates', label: '腿甲' }, { slot: 'boots', label: '靴子' },
+      { slot: 'ring', label: '戒指' },
+    ];
+    eqSlots.forEach(es => {
+      const div = document.createElement('div');
+      div.className = 'equip-slot';
+      const eq = player.equipment[es.slot];
+      if (eq) {
+        const sprite = itemSprite(ITEMS[eq].sprite);
+        if (sprite && sprite.idle) {
+          const c = sprite.idle;
+          const img = document.createElement('canvas');
+          img.width = 12; img.height = 12;
+          img.getContext('2d').drawImage(c, 0, 0);
+          img.style.width = '32px'; img.style.height = '32px';
+          img.style.imageRendering = 'pixelated';
+          div.appendChild(img);
+          div.title = ITEMS[eq].name + ' (点击卸下)';
+          div.addEventListener('click', () => {
+            addToInventory(eq, 1);
+            player.equipment[es.slot] = null;
+            recalcPlayerStats();
+            showEquipment();
+            updateHotbar();
+          });
+        }
+      }
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = es.label;
+      div.appendChild(label);
+      slots.appendChild(div);
+    });
+    baseBlock.appendChild(slots);
+    container.appendChild(baseBlock);
+    // Right: gacha equipment
+    if (player.gachaEquips) {
+      const gachaBlock = document.createElement('div');
+      gachaBlock.innerHTML = '<div style="color:#FFD700;font-size:10px;margin-bottom:4px">🎰 抽奖装备</div>';
+      const gSlots = document.createElement('div');
+      gSlots.className = 'equip-slots';
+      eqSlots.forEach(es => {
+        const div = document.createElement('div');
+        div.className = 'equip-slot';
+        const ge = player.gachaEquips[es.slot];
+        if (ge) {
+          div.style.borderColor = RARITY[ge.rarity].color;
+          div.style.boxShadow = '0 0 8px ' + RARITY[ge.rarity].glow;
+          const icon = genGachaIcon(ge.rarity, ge.slot);
+          const img = document.createElement('canvas');
+          img.width = 32; img.height = 32;
+          img.getContext('2d').drawImage(icon, 0, 0);
+          img.style.width = '38px'; img.style.height = '38px';
+          img.style.imageRendering = 'pixelated';
+          div.appendChild(img);
+          const nameTag = document.createElement('span');
+          nameTag.style.cssText = 'position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:7px;white-space:nowrap;color:' + RARITY[ge.rarity].color;
+          nameTag.textContent = ge.name;
+          div.appendChild(nameTag);
+          div.title = `${RARITY[ge.rarity].name} ${ge.name}\n⚔${ge.atk} 🛡${ge.def} ❤${ge.hp} 💎${ge.mana} 👟${ge.spd}\n点击卸下`;
+          div.addEventListener('click', () => {
+            player.gachaEquips[es.slot] = null;
+            recalcPlayerStats();
+            addChatMsg(`{system}卸下了 ${ge.name}`);
+            showEquipment();
+          });
+        }
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = es.label;
+        div.appendChild(label);
+        gSlots.appendChild(div);
+      });
+      gachaBlock.appendChild(gSlots);
+      container.appendChild(gachaBlock);
+    }
+    // Stats
+    const gBonus = getGachaStatBonuses();
+    const stats = document.createElement('div');
+    stats.style.cssText = 'color:#D4A574;font-size:11px;min-width:150px';
+    let statHtml = `<div>⚔ 攻击力: ${getPlayerAtk()}</div><div>🛡 防御力: ${getPlayerDef()}</div><div>❤ HP: ${player.maxHp}</div><div>💎 Mana: ${player.maxMana}</div>`;
+    if (gBonus.atk > 0 || gBonus.def > 0 || gBonus.hp > 0 || gBonus.mana > 0) {
+      statHtml += '<div style="color:#f39c12;margin-top:4px;border-top:1px solid #5C4033;padding-top:4px">抽奖加成:</div>';
+      if (gBonus.atk) statHtml += `<div style="color:#f39c12">⚔ +${gBonus.atk}</div>`;
+      if (gBonus.def) statHtml += `<div style="color:#f39c12">🛡 +${gBonus.def}</div>`;
+      if (gBonus.hp) statHtml += `<div style="color:#f39c12">❤ +${gBonus.hp}</div>`;
+      if (gBonus.mana) statHtml += `<div style="color:#f39c12">💎 +${gBonus.mana}</div>`;
+    }
+    stats.innerHTML = statHtml;
+    container.appendChild(stats);
+    body.appendChild(container);
+  });
+}
+
+function showSkills() {
+  showModal('技能', (body) => {
+    const list = document.createElement('div');
+    list.className = 'skills-list';
+    const names = { attack: '攻击', defense: '防御', strength: '力量', health: '生命', woodcutting: '伐木', mining: '采矿', fishing: '钓鱼', foraging: '采集' };
+    Object.entries(skills).forEach(([key, val]) => {
+      const row = document.createElement('div');
+      row.className = 'skill-row';
+      const name = document.createElement('span');
+      name.className = 'skill-name';
+      name.textContent = names[key] || key;
+      name.style.color = '#D4A574';
+      row.appendChild(name);
+      const xpBar = document.createElement('div');
+      xpBar.className = 'skill-xp-bar';
+      const xpFill = document.createElement('div');
+      xpFill.className = 'skill-xp-fill';
+      const needed = xpForLevel(val.level);
+      xpFill.style.width = (val.xp / needed * 100) + '%';
+      xpBar.appendChild(xpFill);
+      row.appendChild(xpBar);
+      const lvl = document.createElement('span');
+      lvl.className = 'skill-lvl';
+      lvl.textContent = 'Lv.' + val.level;
+      row.appendChild(lvl);
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+  });
+}
+
+function showQuests() {
+  showModal('任务', (body) => {
+    const list = document.createElement('div');
+    list.id = 'quest-list';
+    Object.entries(QUESTS).forEach(([key, q]) => {
+      const div = document.createElement('div');
+      div.className = 'quest-item';
+      const allDone = q.objectives.every(o => o.current >= o.count) || q.completed;
+      div.innerHTML = `<div class="quest-name">${q.completed ? '✅ ' : ''}${q.name} ${allDone && !q.completed ? '(可提交)' : ''}</div>
+        <div class="quest-desc">${q.desc}</div>
+        ${q.objectives.map(o => `<div class="quest-progress">${o.type === 'kill' ? '击杀' : '收集'} ${o.target}: ${Math.min(o.current, o.count)}/${o.count}</div>`).join('')}`;
+      if (allDone && !q.completed) {
+        div.style.borderColor = '#2ecc71';
+        div.addEventListener('click', () => completeQuest(key));
+      }
+      list.appendChild(div);
+    });
+    body.appendChild(list);
+  });
+}
+
+function completeQuest(key) {
+  const q = QUESTS[key];
+  if (q.completed) return;
+  q.completed = true;
+  addXp(q.rewards.xp);
+  addChatMsg(`{xp}🎉 完成任务: ${q.name}！获得 ${q.rewards.xp} XP`);
+  q.rewards.items.forEach(r => {
+    for (let i = 0; i < r.count; i++) addToInventory(r.key);
+    addChatMsg(`{item}获得: ${ITEMS[r.key]?.name || r.key} x${r.count}`);
+  });
+  if (currentModal === '任务') showQuests();
+}
+
+function updateHotbar() {
+  const slots = document.querySelectorAll('.hotbar-slot');
+  slots.forEach((slot, i) => {
+    const existingCanvas = slot.querySelector('canvas');
+    if (existingCanvas) slot.removeChild(existingCanvas);
+    const item = inventory[i];
+    if (item) {
+      const sprite = itemSprite(item.key);
+      if (sprite && sprite.idle) {
+        const c = document.createElement('canvas');
+        c.width = 36; c.height = 36;
+        c.style.imageRendering = 'pixelated';
+        c.getContext('2d').imageSmoothingEnabled = false;
+        c.getContext('2d').drawImage(sprite.idle, 4, 4, 28, 28);
+        c.style.position = 'absolute';
+        c.title = ITEMS[item.key]?.name || item.key;
+        slot.appendChild(c);
+      }
+    }
+  });
+}
+
+function interactNPC(npc) {
+  if (npc.shop) {
+    showShop(npc);
+  } else if (npc.dialogue) {
+    showDialogue(npc);
+  }
+}
+
+function showDialogue(npc) {
+  dialogQueue = npc.dialogue.slice();
+  dialogQueue.push(npc.quest ? '你能帮我一个忙吗？' : '祝你冒险愉快！');
+  showNextDialogue(npc);
+}
+
+function showNextDialogue(npc) {
+  if (dialogQueue.length === 0) {
+    dialogBox.style.display = 'none';
+    // offer quest
+    if (npc.quest && !QUESTS[npc.quest].completed) {
+      const allDone = QUESTS[npc.quest].objectives.every(o => o.current >= o.count);
+      if (allDone) {
+        completeQuest(npc.quest);
+      } else {
+        addChatMsg(`{npc}${npc.name}: 新任务可用 - "${QUESTS[npc.quest].name}"`);
+      }
+    }
+    return;
+  }
+  dialogBox.style.display = 'block';
+  dialogBox.innerHTML = `<div class="speaker">${npc.name}</div><div class="text">${dialogQueue.shift()}</div>
+    <button onclick="dialogBox.style.display='none';dialogQueue=[];">关闭</button>
+    <button onclick="showNextDialogue(${JSON.stringify(npc).replace(/"/g, '&quot;')})">继续</button>`;
+}
+
+function showShop(npc) {
+  showModal(npc.name + '的商店', (body) => {
+    const grid = document.createElement('div');
+    grid.className = 'inventory-grid';
+    grid.style.gridTemplateColumns = 'repeat(4,50px)';
+    npc.shop.forEach(key => {
+      const slot = document.createElement('div');
+      slot.className = 'inv-slot';
+      const data = ITEMS[key];
+      if (data) {
+        const sprite = itemSprite(data.sprite);
+        if (sprite && sprite.idle) {
+          const c = sprite.idle;
+          const img = document.createElement('canvas');
+          img.width = 12; img.height = 12;
+          img.getContext('2d').drawImage(c, 0, 0);
+          img.style.width = '32px'; img.style.height = '32px';
+          img.style.imageRendering = 'pixelated';
+          slot.appendChild(img);
+        }
+        const cnt = document.createElement('span');
+        cnt.className = 'count';
+        cnt.textContent = data.value + 'g';
+        cnt.style.cssText = 'color:#FFD700;font-size:9px';
+        slot.appendChild(cnt);
+        slot.title = data.name + ' - ' + data.value + ' 金币';
+        slot.addEventListener('click', () => {
+          const cost = data.value;
+          const playerGold = countGold();
+          if (playerGold >= cost) {
+            spendGold(cost);
+            addToInventory(key, 1);
+            addChatMsg(`{item}购买了 ${data.name} (${cost} 金币)`);
+            if (currentModal === npc.name + '的商店') showShop(npc);
+          } else {
+            addChatMsg(`{system}金币不足！需要 ${cost} 金币。`);
+          }
+        });
+      }
+      grid.appendChild(slot);
+    });
+    body.appendChild(grid);
+    const goldDiv = document.createElement('div');
+    goldDiv.style.cssText = 'margin-top:8px;color:#FFD700;font-size:12px';
+    goldDiv.textContent = `💰 金币: ${countGold()}`;
+    body.appendChild(goldDiv);
+  });
+}
+
+function countGold() {
+  let g = gold;
+  inventory.forEach(slot => {
+    if (slot && slot.key === 'gold') g += slot.count;
+  });
+  return g;
+}
+
+function spendGold(amount) {
+  // deduct from gold inventory first
+  for (let i = 0; i < inventory.length; i++) {
+    if (inventory[i] && inventory[i].key === 'gold') {
+      const take = Math.min(amount, inventory[i].count);
+      inventory[i].count -= take;
+      amount -= take;
+      if (inventory[i].count <= 0) inventory[i] = null;
+      if (amount <= 0) return;
+    }
+  }
+  gold -= amount;
+}
+
+// ==================== INPUT ====================
+function handleInteract() {
+  interactTarget = null;
+  let closest = null, closestDist = 40;
+  for (const npc of npcs) {
+    const dist = Math.hypot(player.x + 8 - npc.x - 8, player.y + 10 - npc.y - 12);
+    if (dist < closestDist) { closestDist = dist; closest = npc; }
+  }
+  if (closest) {
+    interactNPC(closest);
+    return;
+  }
+  // check ground items
+  for (const gi of groundItems) {
+    const dist = Math.hypot(player.x + 8 - gi.x, player.y + 10 - gi.y);
+    if (dist < 30) { pickupItem(gi); return; }
+  }
+}
+
+window.addEventListener('keydown', (e) => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key.toLowerCase() === 'e') handleInteract();
+  if (e.key.toLowerCase() === 'i') { if (currentModal === '物品栏') hideModal(); else showInventory(); }
+  if (e.key.toLowerCase() === 'r') { if (currentModal === '装备') hideModal(); else showEquipment(); }
+  if (e.key.toLowerCase() === 's' && e.ctrlKey) { e.preventDefault(); if (currentModal === '技能') hideModal(); else showSkills(); }
+  if (e.key.toLowerCase() === 'q' && !e.ctrlKey) { if (currentModal === '任务') hideModal(); else showQuests(); }
+  if (e.key === 'Escape') hideModal();
+  // hotbar keys
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 8 && inventory[num - 1]) {
+    const item = ITEMS[inventory[num - 1].key];
+    if (item && item.type === 'consumable') {
+      handleInventoryClick(num - 1);
+      updateHotbar();
+    }
+  }
+});
+window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+document.getElementById('game-container').addEventListener('mousemove', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+document.getElementById('game-container').addEventListener('mousedown', (e) => {
+  if (e.button === 0) { mouse.down = true; handleClick(); }
+  if (e.button === 2) { mouse.rightDown = true; }
+});
+document.getElementById('game-container').addEventListener('mouseup', (e) => {
+  mouse.down = false; mouse.rightDown = false;
+});
+document.getElementById('game-container').addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const wx = mouse.x / ZOOM + camera.x;
+  const wy = mouse.y / ZOOM + camera.y;
+  const gx = Math.floor(wx / TILE_SIZE), gy = Math.floor(wy / TILE_SIZE);
+  pathQueue = [{ x: gx * TILE_SIZE + 8, y: gy * TILE_SIZE + 8 }];
+});
+
+function handleClick() {
+  const wx = mouse.x / ZOOM + camera.x;
+  const wy = mouse.y / ZOOM + camera.y;
+  const gx = Math.floor(wx / TILE_SIZE), gy = Math.floor(wy / TILE_SIZE);
+
+  // check if clicking a mob
+  let clickedMob = null, minDist = 30;
+  for (const m of mobs) {
+    if (m.dead) continue;
+    const dist = Math.hypot(wx - m.x - 8, wy - m.y - 10);
+    if (dist < minDist) { minDist = dist; clickedMob = m; }
+  }
+
+  if (clickedMob && !player.dead) {
+    const dist = Math.hypot(player.x + 8 - clickedMob.x - 8, player.y + 10 - clickedMob.y - 10);
+    if (dist < 40) {
+      attackTarget();
+      return;
+    }
+  }
+
+  // check resource
+  for (const r of resourceNodes) {
+    if (r.exhausted) continue;
+    const dist = Math.hypot(wx - r.x - 8, wy - r.y - 8);
+    if (dist < 24) {
+      pathQueue = [{ x: r.x + 8, y: r.y + 16 }];
+      return;
+    }
+  }
+
+  // check NPC
+  for (const npc of npcs) {
+    const dist = Math.hypot(wx - npc.x - 8, wy - npc.y - 12);
+    if (dist < 24) {
+      pathQueue = [{ x: npc.x + 4, y: npc.y + 24 }];
+      setTimeout(() => interactNPC(npc), 500);
+      return;
+    }
+  }
+
+  // move
+  const targets = [{ x: gx * TILE_SIZE + 8, y: gy * TILE_SIZE + 8 }];
+  // simple path: go directly
+  pathQueue = targets;
+}
+
+function updateResourceRespawns(dt) {
+  resourceNodes.forEach(r => {
+    if (r.exhausted) {
+      r.respawnTimer -= dt;
+      if (r.respawnTimer <= 0) {
+        r.exhausted = false;
+        r.hp = r.maxHp;
+      }
+    }
+  });
+}
+
+// ==================== GAME LOOP ====================
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+  const dt = lastTime ? Math.min(timestamp - lastTime, 50) : 16;
+  lastTime = timestamp;
+  gameTime += dt;
+  animFrame = Math.floor(gameTime / 150);
+
+  if (!player.dead) {
+    updatePlayer(dt);
+  } else {
+    updatePlayer(dt);
+  }
+  updateMobs(dt);
+  updateProjectiles(dt);
+  updateFloatingTexts(dt);
+  updateResourceRespawns(dt);
+  updateUI();
+
+  if (animFrame % 8 === 0) updateHotbar();
+
+  // Rendering
+  [ctxBg, ctxFg, ctxEnt, ctxEntF, ctxText, ctxCursor].forEach(ctx => {
+    ctx.clearRect(0, 0, canvasW, canvasH);
+  });
+  drawTileMap();
+  drawEntities();
+  drawPlayerHUD();
+  drawCursor();
+  if (animFrame % 30 === 0) drawMinimap();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ==================== INITIALIZATION ====================
+function init() {
+  resizeCanvases();
+  generateMap();
+  spawnMobs();
+  spawnNPCs();
+  spawnResources();
+
+  // give starter items
+  player.gachaEquips = {};
+  addToInventory('sword_bronze', 1);
+  addToInventory('shield_wood', 1);
+  addToInventory('potion_hp', 5);
+  addToInventory('bread', 3);
+  player.equipment.weapon = 'sword_bronze';
+  player.equipment.shield = 'shield_wood';
+  addChatMsg('{system}欢迎来到 Kaetram 单机版！');
+  addChatMsg('{system}WASD 移动 | 鼠标点击攻击/移动 | E 交互 | I 背包 | 右键移动');
+  addChatMsg('{system}寻找村长开始你的冒险吧！');
+  updateHotbar();
+  drawMinimap();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// UI event listeners
+document.querySelector('.modal-close').addEventListener('click', hideModal);
+modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideModal(); });
+document.querySelectorAll('.menu-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const menu = btn.dataset.menu;
+    if (menu === 'inventory') showInventory();
+    else if (menu === 'equipment') showEquipment();
+    else if (menu === 'skills') showSkills();
+    else if (menu === 'quests') showQuests();
+    else if (menu === 'gachabag') showGachaBackpack();
+  });
+});
+
+document.getElementById('gacha-btn').addEventListener('click', doGachaDraw);
+document.getElementById('gacha-result-overlay').addEventListener('click', function(e) {
+  if (e.target === this) hideGachaResult();
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvases();
+});
+
+init();
+</script>
+</body>
+</html>
