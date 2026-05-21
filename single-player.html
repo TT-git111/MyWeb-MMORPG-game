@@ -31,8 +31,8 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 #mana-bar .stat-bar-inner{background:linear-gradient(180deg,#3498db,#2980b9)}
 #xp-bar .stat-bar-inner{background:linear-gradient(180deg,#2ecc71,#27ae60)}
 .stat-text{color:#fff;font-size:12px;width:70px}
-#minimap{position:absolute;top:10px;right:10px;width:140px;height:140px;border:2px solid #8B7355;background:rgba(0,0,0,0.6);image-rendering:pixelated}
-#return-btn{position:absolute;top:155px;right:10px;width:140px;height:36px;background:linear-gradient(135deg,#2C1810,#3E2723);border:1px solid #8B7355;color:#D4A574;font-size:12px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;border-radius:3px;transition:all 0.2s;z-index:11}
+#minimap{position:absolute;top:100px;right:10px;width:140px;height:140px;border:2px solid #8B7355;background:rgba(0,0,0,0.6);image-rendering:pixelated}
+#return-btn{position:absolute;top:245px;right:10px;width:140px;height:36px;background:linear-gradient(135deg,#2C1810,#3E2723);border:1px solid #8B7355;color:#D4A574;font-size:12px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;border-radius:3px;transition:all 0.2s;z-index:11}
 #return-btn:hover{background:rgba(139,115,85,0.5);color:#FFD700;border-color:#FFD700}
 #menu-buttons{position:absolute;top:10px;right:160px;display:flex;flex-direction:column;gap:3px}
 .menu-btn{width:140px;height:48px;padding:10px 12px;background:rgba(0,0,0,0.7);border:1px solid #8B7355;color:#D4A574;font-size:14px;cursor:pointer;font-family:'Courier New',monospace;text-align:center;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
@@ -574,26 +574,26 @@ function projectileSprite() {
 
 // ==================== GAME DATA ====================
 const ITEMS = {
-  sword_bronze: { name: '铜剑', type: 'weapon', equipSlot: 'weapon', atk: 5, sprite: 'sword', value: 10 },
-  sword_iron: { name: '铁剑', type: 'weapon', equipSlot: 'weapon', atk: 10, sprite: 'sword', value: 50 },
-  axe_bronze: { name: '铜斧', type: 'weapon', equipSlot: 'weapon', atk: 3, sprite: 'axe', value: 8, tool: 'woodcutting' },
-  pickaxe_bronze: { name: '铜镐', type: 'weapon', equipSlot: 'weapon', atk: 3, sprite: 'pickaxe', value: 8, tool: 'mining' },
-  bow_wood: { name: '木弓', type: 'weapon', equipSlot: 'weapon', atk: 7, sprite: 'bow', value: 15, ranged: true },
-  helmet_bronze: { name: '铜盔', type: 'equipment', equipSlot: 'helmet', def: 3, sprite: 'helmet', value: 15 },
-  chestplate_bronze: { name: '铜胸甲', type: 'equipment', equipSlot: 'chestplate', def: 5, sprite: 'chestplate', value: 25 },
-  legplates_bronze: { name: '铜腿甲', type: 'equipment', equipSlot: 'legplates', def: 4, sprite: 'legplates', value: 20 },
-  boots_bronze: { name: '铜靴', type: 'equipment', equipSlot: 'boots', def: 2, sprite: 'boots', value: 10 },
-  shield_wood: { name: '木盾', type: 'equipment', equipSlot: 'shield', def: 4, sprite: 'shield', value: 12 },
-  ring_power: { name: '力量戒指', type: 'equipment', equipSlot: 'ring', atk: 3, sprite: 'ring', value: 30 },
-  potion_hp: { name: '生命药水', type: 'consumable', heal: 25, sprite: 'potion_hp', value: 5 },
-  potion_mana: { name: '法力药水', type: 'consumable', healMana: 15, sprite: 'potion_mana', value: 5 },
-  wood: { name: '木材', type: 'material', sprite: 'wood', value: 2 },
-  ore_copper: { name: '铜矿石', type: 'material', sprite: 'ore', value: 3 },
-  fish_raw: { name: '生鱼', type: 'consumable', heal: 8, sprite: 'fish', value: 4 },
-  bread: { name: '面包', type: 'consumable', heal: 12, sprite: 'bread', value: 3 },
-  gold: { name: '金币', type: 'currency', sprite: 'gold', value: 1 },
-  herb: { name: '草药', type: 'material', sprite: 'herb', value: 4 },
-  arrow: { name: '箭矢', type: 'ammo', sprite: 'arrow', value: 1 },
+  sword_bronze: { name: '铜剑', type: 'weapon', equipSlot: 'weapon', atk: 5, sprite: 'sword', value: 10, desc: '青铜铸造的短剑，新手冒险者的第一把武器' },
+  sword_iron: { name: '铁剑', type: 'weapon', equipSlot: 'weapon', atk: 10, sprite: 'sword', value: 50, desc: '精铁锻造的长剑，锋利无比，适合中级冒险者使用' },
+  axe_bronze: { name: '铜斧', type: 'weapon', equipSlot: 'weapon', atk: 3, sprite: 'axe', value: 8, tool: 'woodcutting', desc: '砍伐树木的趁手工具，也可勉强用作武器' },
+  pickaxe_bronze: { name: '铜镐', type: 'weapon', equipSlot: 'weapon', atk: 3, sprite: 'pickaxe', value: 8, tool: 'mining', desc: '采矿用的铜镐，敲击矿石时偶尔能派上用场' },
+  bow_wood: { name: '木弓', type: 'weapon', equipSlot: 'weapon', atk: 7, sprite: 'bow', value: 15, ranged: true, desc: '弹性十足的木质短弓，可远程攻击敌人' },
+  helmet_bronze: { name: '铜盔', type: 'equipment', equipSlot: 'helmet', def: 3, sprite: 'helmet', value: 15, desc: '铜制头盔，保护头部免受致命打击' },
+  chestplate_bronze: { name: '铜胸甲', type: 'equipment', equipSlot: 'chestplate', def: 5, sprite: 'chestplate', value: 25, desc: '厚实的铜制胸甲，守护心脏与内脏' },
+  legplates_bronze: { name: '铜腿甲', type: 'equipment', equipSlot: 'legplates', def: 4, sprite: 'legplates', value: 20, desc: '铜片连缀的护腿，奔跑时也不影响灵活' },
+  boots_bronze: { name: '铜靴', type: 'equipment', equipSlot: 'boots', def: 2, sprite: 'boots', value: 10, desc: '轻便的铜底靴子，走在石路上也不会硌脚' },
+  shield_wood: { name: '木盾', type: 'equipment', equipSlot: 'shield', def: 4, sprite: 'shield', value: 12, desc: '硬木与铁边箍成的圆盾，格挡利器' },
+  ring_power: { name: '力量戒指', type: 'equipment', equipSlot: 'ring', atk: 3, sprite: 'ring', value: 30, desc: '蕴含魔力的指环，戴上后感到力量涌动' },
+  potion_hp: { name: '生命药水', type: 'consumable', heal: 25, sprite: 'potion_hp', value: 5, desc: '猩红色的恢复药剂，喝下后伤口迅速愈合' },
+  potion_mana: { name: '法力药水', type: 'consumable', healMana: 15, sprite: 'potion_mana', value: 5, desc: '湛蓝色的魔力药剂，精神力瞬间充沛' },
+  wood: { name: '木材', type: 'material', sprite: 'wood', value: 2, desc: '从树上砍下的原木，建筑与制作的基础材料' },
+  ore_copper: { name: '铜矿石', type: 'material', sprite: 'ore', value: 3, desc: '闪着金属光泽的矿石，可熔炼为铜锭' },
+  fish_raw: { name: '生鱼', type: 'consumable', heal: 8, sprite: 'fish', value: 4, desc: '刚从水里捞起的鲜鱼，简单烹饪后即可食用' },
+  bread: { name: '面包', type: 'consumable', heal: 12, sprite: 'bread', value: 3, desc: '村长烤制的麦香面包，松软可口能填饱肚子' },
+  gold: { name: '金币', type: 'currency', sprite: 'gold', value: 1, desc: '大陆通用的货币，金光闪闪惹人爱' },
+  herb: { name: '草药', type: 'material', sprite: 'herb', value: 4, desc: '野外采集的绿色草药，可制作各种药水' },
+  arrow: { name: '箭矢', type: 'ammo', sprite: 'arrow', value: 1, desc: '木质箭杆配铁箭头，弓箭手的必需品' },
 };
 
 // ==================== GACHA SYSTEM ====================
@@ -1117,6 +1117,14 @@ const QUESTS = {
   },
 };
 
+const VILLAGE_X = 33, VILLAGE_Y = 36, VILLAGE_W = 17, VILLAGE_H = 17;
+
+function isInVillage(x, y) {
+  const gx = Math.floor(x / TILE_SIZE);
+  const gy = Math.floor(y / TILE_SIZE);
+  return gx >= VILLAGE_X && gx < VILLAGE_X + VILLAGE_W && gy >= VILLAGE_Y && gy < VILLAGE_Y + VILLAGE_H;
+}
+
 // ==================== MAP GENERATION ====================
 const TILE = { GRASS: 0, PATH: 1, SAND: 2, WATER: 3, DEEP_WATER: 4, WALL: 5, FLOOR: 6, DIRT: 7, FLOWER: 8, BRIDGE: 9, DOOR: 10 };
 
@@ -1228,7 +1236,7 @@ function generateMap() {
   }
 
   // village area on a plateau
-  const vx = 35, vy = 40, vw = 12, vh = 8;
+  const vx = VILLAGE_X, vy = VILLAGE_Y, vw = VILLAGE_W, vh = VILLAGE_H;
   for (let dy = 0; dy < vh; dy++)
     for (let dx = 0; dx < vw; dx++) {
       const i = (vy + dy) * MAP_WIDTH + (vx + dx);
@@ -1242,20 +1250,20 @@ function generateMap() {
       }
     }
 
-  // village exits
+  // village exits (south gate 2-wide, west gate 2-wide)
   const gates = [
-    { x: vx + 5, y: vy + vh - 1 },
-    { x: vx + 6, y: vy + vh - 1 },
-    { x: vx, y: vy + 3 },
-    { x: vx, y: vy + 4 },
+    { x: vx + 8, y: vy + vh - 1 },
+    { x: vx + 9, y: vy + vh - 1 },
+    { x: vx, y: vy + 8 },
+    { x: vx, y: vy + 9 },
   ];
   gates.forEach(g => {
     const i = g.y * MAP_WIDTH + g.x;
     mapData[i] = TILE.DOOR; mapCollision[i] = false; mapHigh.delete(i);
   });
   const torchSpots = [
-    { x: vx + 4, y: vy + vh - 1 }, { x: vx + 7, y: vy + vh - 1 },
-    { x: vx + 1, y: vy + 3 }, { x: vx + 1, y: vy + 4 },
+    { x: vx + 7, y: vy + vh - 1 }, { x: vx + 10, y: vy + vh - 1 },
+    { x: vx + 1, y: vy + 8 }, { x: vx + 1, y: vy + 9 },
   ];
   torchSpots.forEach(t => {
     const i = t.y * MAP_WIDTH + t.x;
@@ -1281,11 +1289,11 @@ function generateMap() {
       else y += y < y2 ? 1 : -1;
     }
   }
-  drawPath(vx + 6, vy + vh, vx + 6, vy + vh + 15);
-  drawPath(vx + 6, vy + vh + 15, vx + 30, vy + vh + 15);
-  drawPath(vx + 30, vy + vh + 15, vx + 60, vy + vh + 25);
-  drawPath(vx - 4, vy + 4, vx - 4, vy - 10);
-  drawPath(vx - 4, vy - 10, vx - 30, vy - 10);
+  drawPath(vx + 9, vy + vh, vx + 9, vy + vh + 20);
+  drawPath(vx + 9, vy + vh + 20, vx + 35, vy + vh + 20);
+  drawPath(vx + 35, vy + vh + 20, vx + 65, vy + vh + 30);
+  drawPath(vx - 4, vy + 9, vx - 4, vy - 15);
+  drawPath(vx - 4, vy - 15, vx - 35, vy - 15);
 
   // dungeon area
   const dx = 180, dy = 150, dw = 10, dh = 8;
@@ -1311,6 +1319,7 @@ let player = {
   xp: 0, level: 1,
   attackCooldown: 0,
   invincibleTimer: 0,
+  lastHitTime: 0,
   orientation: 'down',
   moving: false,
   attacking: false,
@@ -1410,20 +1419,20 @@ function getDropTable(type) {
 
 function spawnNPCs() {
   npcs = [
-    { type: 'elder', name: '村长', x: 40 * TILE_SIZE, y: 42 * TILE_SIZE, gridX: 40, gridY: 42,
+    { type: 'elder', name: '村长', x: 41 * TILE_SIZE, y: 39 * TILE_SIZE, gridX: 41, gridY: 39,
       dialogue: ['欢迎来到我们的村庄，年轻的冒险者！', '你愿意帮我们清理附近的老鼠吗？'],
       quest: 'q1', shop: null },
-    { type: 'merchant', name: '商人', x: 43 * TILE_SIZE, y: 46 * TILE_SIZE, gridX: 43, gridY: 46,
+    { type: 'merchant', name: '商人', x: 47 * TILE_SIZE, y: 49 * TILE_SIZE, gridX: 47, gridY: 49,
       dialogue: ['看看我的商品吧！从药水到武器应有尽有。'],
       quest: null,
       shop: ['potion_hp', 'potion_mana', 'bread', 'arrow', 'sword_bronze', 'shield_wood', 'helmet_bronze', 'boots_bronze'] },
-    { type: 'blacksmith', name: '铁匠', x: 37 * TILE_SIZE, y: 45 * TILE_SIZE, gridX: 37, gridY: 45,
+    { type: 'blacksmith', name: '铁匠', x: 36 * TILE_SIZE, y: 48 * TILE_SIZE, gridX: 36, gridY: 48,
       dialogue: ['我需要木材来制作工具...', '如果你能帮我收集一些，我会给你一把好斧头。'],
       quest: 'q2', shop: ['sword_iron', 'chestplate_bronze', 'legplates_bronze', 'pickaxe_bronze', 'axe_bronze', 'bow_wood'] },
-    { type: 'guard', name: '守卫', x: 47 * TILE_SIZE, y: 42 * TILE_SIZE, gridX: 47, gridY: 42,
+    { type: 'guard', name: '守卫', x: 48 * TILE_SIZE, y: 39 * TILE_SIZE, gridX: 48, gridY: 39,
       dialogue: ['村庄东边有骷髅出没，你能帮我们处理吗？'],
       quest: 'q3', shop: null },
-    { type: 'wizard', name: '巫师', x: 38 * TILE_SIZE, y: 36 * TILE_SIZE, gridX: 38, gridY: 36,
+    { type: 'wizard', name: '巫师', x: 37 * TILE_SIZE, y: 39 * TILE_SIZE, gridX: 37, gridY: 39,
       dialogue: ['我需要一些草药来制作魔法药水...', '在森林里可以找到它们。'],
       quest: 'q4', shop: ['potion_hp', 'potion_mana', 'ring_power'] },
   ];
@@ -1441,7 +1450,7 @@ function spawnResources() {
     }
   }
   // remove trees from village
-  const filtered = treePositions.filter(t => !(t.x >= 33 && t.x <= 49 && t.y >= 33 && t.y <= 50));
+  const filtered = treePositions.filter(t => !(t.x >= VILLAGE_X - 2 && t.x <= VILLAGE_X + VILLAGE_W + 2 && t.y >= VILLAGE_Y - 2 && t.y <= VILLAGE_Y + VILLAGE_H + 2));
   const selected = filtered.sort(() => Math.random() - 0.5).slice(0, 360);
   selected.forEach(t => {
     resourceNodes.push({
@@ -1884,6 +1893,10 @@ function updatePlayer(dt) {
   if (player.attackCooldown > 0) player.attackCooldown -= dt;
   if (player.invincibleTimer > 0) player.invincibleTimer -= dt;
 
+  if (!player.dead && player.hp < player.maxHp && gameTime - player.lastHitTime > 8000) {
+    player.hp = Math.min(player.maxHp, player.hp + 30 * dt / 1000);
+  }
+
   let moving = false;
   let dx = 0, dy = 0;
 
@@ -1989,7 +2002,7 @@ function updateMobs(dt) {
       const speed = 0.5;
       const nx = m.x + (pdx / pDist) * speed;
       const ny = m.y + (pdy / pDist) * speed;
-      if (!isCollidingWorld(nx, ny, 8, 8) && !isNearOtherMob(m, nx, ny)) {
+      if (!isCollidingWorld(nx, ny, 8, 8) && !isNearOtherMob(m, nx, ny) && !isInVillage(nx, ny)) {
         m.x = nx; m.y = ny;
       }
       m.moving = true;
@@ -1998,6 +2011,7 @@ function updateMobs(dt) {
       const dmg = Math.max(1, m.atk - getPlayerDef());
       if (player.invincibleTimer <= 0) {
         player.hp -= dmg;
+        player.lastHitTime = gameTime;
         player.invincibleTimer = 300;
         addFloatingText(m.x + 8, m.y - 8, '-' + dmg, '#e74c3c');
         addChatMsg(`{damage}${m.type} 对你造成了 ${dmg} 点伤害！`);
@@ -2011,7 +2025,7 @@ function updateMobs(dt) {
         m.wanderDir = { x: (Math.random() - 0.5) * 1.5, y: (Math.random() - 0.5) * 1.5 };
       }
       const nx = m.x + m.wanderDir.x, ny = m.y + m.wanderDir.y;
-      if (!isCollidingWorld(nx, ny, 8, 8)) {
+      if (!isCollidingWorld(nx, ny, 8, 8) && !isInVillage(nx, ny)) {
         m.x = nx; m.y = ny;
       }
       m.moving = Math.abs(m.wanderDir.x) > 0.1 || Math.abs(m.wanderDir.y) > 0.1;
@@ -2282,7 +2296,7 @@ function showInventory() {
     for (let i = 0; i < 20; i++) {
       const slot = document.createElement('div');
       slot.className = 'inv-slot';
-      slot.title = inventory[i] ? `${ITEMS[inventory[i].key]?.name || inventory[i].key} x${inventory[i].count}` : '空';
+      slot.title = inventory[i] ? `${ITEMS[inventory[i].key]?.name || inventory[i].key} x${inventory[i].count}\n${ITEMS[inventory[i].key]?.desc || ''}` : '空';
       if (inventory[i]) {
         const sprite = itemSprite(inventory[i].key);
         if (sprite && sprite.idle) {
@@ -2325,8 +2339,6 @@ function handleInventoryClick(i) {
       player.mana = Math.min(player.maxMana, player.mana + item.healMana);
       addChatMsg(`{heal}使用了 ${item.name}，恢复了 ${item.healMana} Mana`);
     }
-    inventory[i].count--;
-    if (inventory[i].count <= 0) inventory[i] = null;
     if (currentModal === '物品栏') showInventory();
     updateHotbar();
   } else if (item.type === 'weapon' || item.type === 'equipment') {
@@ -2394,7 +2406,7 @@ function showEquipment() {
           img.style.width = '32px'; img.style.height = '32px';
           img.style.imageRendering = 'pixelated';
           div.appendChild(img);
-          div.title = ITEMS[eq].name + ' (点击卸下)';
+          div.title = ITEMS[eq].name + (ITEMS[eq].desc ? '\n' + ITEMS[eq].desc : '') + ' (点击卸下)';
           div.addEventListener('click', () => {
             addToInventory(eq, 1);
             player.equipment[es.slot] = null;
@@ -2828,7 +2840,7 @@ function gameLoop(timestamp) {
   gameTime += dt;
   animFrame = Math.floor(gameTime / 150);
 
-  updateJoystickMovement();
+  if (isMobile) updateJoystickMovement();
 
   if (!player.dead) {
     updatePlayer(dt);
