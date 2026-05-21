@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Kaetram - Single Player</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
@@ -2961,17 +2961,28 @@ const joystickBg = document.getElementById('joystick-bg');
 const joystickKnob = document.getElementById('joystick-knob');
 const actionButton = document.getElementById('action-button');
 
+let joystickTouchId = null;
+
 function handleJoystickStart(e) {
   e.preventDefault();
-  const touch = e.touches ? e.touches[0] : e;
-  const rect = joystickBg.getBoundingClientRect();
   joystick.active = true;
-  joystick.startX = touch.clientX - rect.left;
-  joystick.startY = touch.clientY - rect.top;
   joystick.x = 0;
   joystick.y = 0;
+  if (e.touches) {
+    joystickTouchId = e.touches[0].identifier;
+    const touch = e.touches[0];
+    const rect = joystickBg.getBoundingClientRect();
+    joystick.startX = touch.clientX - rect.left;
+    joystick.startY = touch.clientY - rect.top;
+  } else {
+    joystickTouchId = null;
+    const rect = joystickBg.getBoundingClientRect();
+    joystick.startX = e.clientX - rect.left;
+    joystick.startY = e.clientY - rect.top;
+  }
   document.addEventListener('touchmove', handleJoystickMove, { passive: false });
   document.addEventListener('touchend', handleJoystickEnd);
+  document.addEventListener('touchcancel', handleJoystickEnd);
   document.addEventListener('mousemove', handleJoystickMove);
   document.addEventListener('mouseup', handleJoystickEnd);
 }
@@ -2979,10 +2990,28 @@ function handleJoystickStart(e) {
 function handleJoystickMove(e) {
   if (!joystick.active) return;
   e.preventDefault();
-  const touch = e.touches ? e.touches[0] : e;
+  let clientX, clientY;
+  if (e.touches) {
+    if (joystickTouchId !== null) {
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === joystickTouchId) {
+          clientX = e.touches[i].clientX;
+          clientY = e.touches[i].clientY;
+          break;
+        }
+      }
+      if (clientX === undefined) return;
+    } else {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    }
+  } else {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  }
   const rect = joystickBg.getBoundingClientRect();
-  const dx = touch.clientX - rect.left - joystick.startX;
-  const dy = touch.clientY - rect.top - joystick.startY;
+  const dx = clientX - rect.left - joystick.startX;
+  const dy = clientY - rect.top - joystick.startY;
   const dist = Math.sqrt(dx * dx + dy * dy);
   const maxDist = 45;
   if (dist > maxDist) {
@@ -2996,16 +3025,18 @@ function handleJoystickMove(e) {
 }
 
 function handleJoystickEnd(e) {
-  e.preventDefault();
   joystick.active = false;
+  joystickTouchId = null;
   joystick.x = 0;
   joystick.y = 0;
   joystickKnob.style.transform = 'translate(-50%, -50%)';
   keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
   document.removeEventListener('touchmove', handleJoystickMove);
   document.removeEventListener('touchend', handleJoystickEnd);
+  document.removeEventListener('touchcancel', handleJoystickEnd);
   document.removeEventListener('mousemove', handleJoystickMove);
   document.removeEventListener('mouseup', handleJoystickEnd);
+  if (e && e.cancelable) e.preventDefault();
 }
 
 joystickBg.addEventListener('mousedown', handleJoystickStart);
@@ -3028,11 +3059,7 @@ function updateJoystickMovement() {
   else { keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false; }
 }
 
-document.addEventListener('gesturestart', e => e.preventDefault());
-document.addEventListener('gesturechange', e => e.preventDefault());
-document.addEventListener('gestureend', e => e.preventDefault());
-document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-document.addEventListener('dblclick', e => e.preventDefault());
+
 
 init();
 </script>
