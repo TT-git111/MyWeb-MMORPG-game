@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Kaetram - Single Player</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
@@ -178,9 +178,9 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
   .mobile-tool-btn:active{background:rgba(255,215,0,0.2);border-color:#FFD700}
   .mobile-tool-btn.gacha-mbtn{border-color:#f1c40f;background:rgba(139,0,0,0.3)}
   /* joystick */
-  #joystick-container{position:fixed !important;bottom:70px;left:10px;width:96px;height:96px;display:block !important;z-index:30 !important;pointer-events:auto}
+  #joystick-container{position:fixed !important;bottom:70px;left:10px;width:96px;height:96px;display:block !important;z-index:30 !important;pointer-events:auto;touch-action:none}
   #joystick-knob{width:40px;height:40px}
-  #action-button{position:fixed !important;bottom:70px;right:10px;width:60px;height:60px;display:flex !important;font-size:24px;z-index:30 !important;pointer-events:auto}
+  #action-button{position:fixed !important;bottom:70px;right:10px;width:60px;height:60px;display:flex !important;font-size:24px;z-index:30 !important;pointer-events:auto;touch-action:none}
   /* modal fullscreen */
   .modal{min-width:auto;width:96vw;max-width:96vw;max-height:82vh;border-radius:6px}
   .modal-body{max-height:58vh}
@@ -2997,6 +2997,7 @@ function handleJoystickEnd(e) {
   joystick.x = 0;
   joystick.y = 0;
   joystickKnob.style.transform = 'translate(-50%, -50%)';
+  keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
 }
 
 joystickBg.addEventListener('mousedown', handleJoystickStart);
@@ -3011,15 +3012,23 @@ actionButton.addEventListener('click', attackTarget);
 actionButton.addEventListener('touchstart', (e) => { e.preventDefault(); attackTarget(); });
 
 function updateJoystickMovement() {
-  if (!joystick.active) return;
+  if (!joystick.active) {
+    keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false;
+    return;
+  }
   const threshold = 15;
-  if (joystick.y < -threshold) { keys['w'] = true; }
-  else if (joystick.y > threshold) { keys['s'] = true; }
-  else { keys['w'] = false; keys['s'] = false; }
-  if (joystick.x < -threshold) { keys['a'] = true; }
-  else if (joystick.x > threshold) { keys['d'] = true; }
-  else { keys['a'] = false; keys['d'] = false; }
+  if (joystick.y < -threshold) { keys['w'] = true; keys['s'] = false; keys['a'] = false; keys['d'] = false; }
+  else if (joystick.y > threshold) { keys['s'] = true; keys['w'] = false; keys['a'] = false; keys['d'] = false; }
+  else if (joystick.x < -threshold) { keys['a'] = true; keys['w'] = false; keys['s'] = false; keys['d'] = false; }
+  else if (joystick.x > threshold) { keys['d'] = true; keys['w'] = false; keys['a'] = false; keys['s'] = false; }
+  else { keys['w'] = false; keys['a'] = false; keys['s'] = false; keys['d'] = false; }
 }
+
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('gestureend', e => e.preventDefault());
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault());
 
 init();
 </script>
