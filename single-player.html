@@ -95,8 +95,9 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 .gacha-result-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,0.75);z-index:30;flex-direction:column;align-items:center;justify-content:center}
 .gacha-result-card{background:linear-gradient(135deg,#1a0a0a,#2C1810);border:3px solid #8B7355;
-  border-radius:8px;padding:16px;text-align:center;min-width:280px;animation:cardAppear 0.5s ease-out}
-@keyframes cardAppear{0%{transform:scale(0.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  border-radius:8px;padding:16px;text-align:center;min-width:280px;animation:cardAppear 0.6s ease-out}
+@keyframes cardAppear{0%{transform:scale(0.2) rotateY(90deg);opacity:0}60%{transform:scale(1.08) rotateY(-5deg);opacity:1}100%{transform:scale(1) rotateY(0deg);opacity:1}}
+@keyframes cardPulse{0%,100%{box-shadow:var(--card-glow)}50%{box-shadow:var(--card-glow-strong)}}
 .gacha-result-card .rarity{font-size:24px;font-weight:bold;margin:8px 0}
 .gacha-result-card .item-name{font-size:18px;margin:4px 0}
 .gacha-result-card .item-stats{font-size:11px;margin:4px 0;color:#aaa}
@@ -107,6 +108,15 @@ canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:
 .gacha-result-card button.draw-more{background:linear-gradient(135deg,#8B0000,#4a0000);border-color:#f1c40f;color:#FFD700;font-size:13px;font-weight:bold}
 .gacha-skip{position:absolute;top:15px;right:20px;color:#ccc;font-size:13px;cursor:pointer;z-index:31}
 .gacha-skip:hover{color:#e74c3c}
+/* beam of light from above */
+.gacha-beam{position:absolute;top:-100%;left:50%;width:4px;height:200%;background:linear-gradient(180deg,transparent,rgba(255,255,255,0.9),transparent);transform:translateX(-50%);animation:beamDrop 0.8s ease-out forwards;pointer-events:none;z-index:29}
+@keyframes beamDrop{0%{top:-100%;opacity:0}30%{top:-10%;opacity:1}100%{top:120%;opacity:0}}
+/* screen flash */
+.gacha-flash{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:28;animation:screenFlash 0.6s ease-out forwards}
+@keyframes screenFlash{0%{background:rgba(255,255,255,0.6)}100%{background:rgba(255,255,255,0)}}
+/* orbiting ring particle */
+.gacha-orbit{position:absolute;pointer-events:none;width:6px;height:6px;border-radius:50%;animation:orbitFloat 2.5s ease-out forwards}
+@keyframes orbitFloat{0%{transform:translate(0,0) scale(0);opacity:0}10%{opacity:1}100%{transform:translate(var(--ox),var(--oy)) scale(0);opacity:0}}
 
 /* rarity colors */
 .rarity-fan{color:#8B7355;text-shadow:0 0 4px #8B7355}
@@ -615,41 +625,167 @@ function genGachaIcon(rarity, slot) {
   c.width = 32; c.height = 32;
   const ctx = c.getContext('2d');
   const rcol = RARITY[rarity].color;
-  ctx.fillStyle = rcol;
-  ctx.globalAlpha = 0.25;
-  ctx.fillRect(0,0,32,32);
-  ctx.globalAlpha = 1;
-  // glow border
-  ctx.strokeStyle = rcol;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1,1,30,30);
-  ctx.shadowColor = rcol;
-  ctx.shadowBlur = 6;
-  ctx.strokeStyle = rcol;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1,1,30,30);
-  ctx.shadowBlur = 0;
-  // rarity star
-  const stars = RARITY_ORDER.indexOf(rarity) + 1;
-  for (let i = 0; i < Math.min(stars, 7); i++) {
-    ctx.fillStyle = (i < 6) ? rcol : '#fff';
-    const sx = 4 + (i % 4) * 7;
-    const sy = 26 - Math.floor(i / 4) * 7;
-    ctx.beginPath();
-    ctx.arc(sx, sy, 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = (i < 6) ? '#fff' : '#000';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-  }
-  // slot icon
-  ctx.fillStyle = rcol;
-  ctx.font = '14px "Courier New"';
-  ctx.textAlign = 'center';
+  const idx = RARITY_ORDER.indexOf(rarity);
   const icons = { weapon: '⚔', helmet: '⛑', chestplate: '🛡', legplates: '👖', boots: '👢', shield: '🛡', ring: '💍' };
-  ctx.fillText(icons[slot] || '◆', 16, 18);
+  const iconChar = icons[slot] || '◆';
+
+  // ---- common: background fill ----
+  ctx.fillStyle = rcol;
+  ctx.globalAlpha = 0.2;
+  ctx.fillRect(0, 0, 32, 32);
+  ctx.globalAlpha = 1;
+
+  if (idx >= 5) {
+    // ---- SP / 神品: intense multi-layer aura ----
+    const spColors = idx === 6 ? ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#8800ff','#ff00ff','#ff0000'] : [rcol, rcol];
+    const rings = idx === 6 ? 5 : 3;
+    for (let ring = rings; ring >= 1; ring--) {
+      const alpha = 0.12 + (rings - ring) * 0.06;
+      const r = 10 + ring * 3 + (idx === 6 ? idx * 1.5 : 0);
+      const col = idx === 6 ? spColors[ring % spColors.length] : rcol;
+      ctx.beginPath();
+      ctx.arc(16, 16, r, 0, Math.PI * 2);
+      ctx.strokeStyle = col;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = ring === rings ? 1.5 : 1;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 6 + ring * 2;
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    // diamond inner pattern
+    ctx.save();
+    ctx.translate(16, 16);
+    ctx.rotate(Math.PI / 4);
+    ctx.strokeStyle = rcol;
+    ctx.globalAlpha = 0.6;
+    ctx.lineWidth = 1;
+    ctx.shadowColor = rcol;
+    ctx.shadowBlur = 8;
+    ctx.strokeRect(-7, -7, 14, 14);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  } else if (idx >= 3) {
+    // ---- 天品/仙品: radiant glow border ----
+    for (let ring = 3; ring >= 1; ring--) {
+      ctx.beginPath();
+      ctx.arc(16, 16, 9 + ring * 3, 0, Math.PI * 2);
+      ctx.strokeStyle = rcol;
+      ctx.globalAlpha = 0.08 + (3 - ring) * 0.06;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = rcol;
+      ctx.shadowBlur = 10 + ring;
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    // ornate corner accents
+    [[2,2],[29,2],[2,29],[29,29]].forEach(([cx, cy]) => {
+      ctx.fillStyle = rcol;
+      ctx.globalAlpha = 0.7;
+      ctx.shadowColor = rcol;
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
+  } else if (idx >= 1) {
+    // ---- 玄品/地品: double border bevel ----
+    ctx.strokeStyle = rcol;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = rcol;
+    ctx.shadowBlur = 5;
+    ctx.strokeRect(1.5, 1.5, 29, 29);
+    ctx.shadowBlur = 0;
+    // inner highlight
+    ctx.strokeStyle = rcol;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(3.5, 3.5, 25, 25);
+    ctx.globalAlpha = 1;
+    // bevel corner dots
+    [[5,5],[27,5],[5,27],[27,27]].forEach(([cx, cy]) => {
+      ctx.fillStyle = rcol;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  } else {
+    // ---- 凡品: simple border ----
+    ctx.strokeStyle = rcol;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = rcol;
+    ctx.shadowBlur = 3;
+    ctx.strokeRect(1.5, 1.5, 29, 29);
+    ctx.shadowBlur = 0;
+  }
+
+  // ---- stars ----
+  const stars = idx + 1;
+  for (let i = 0; i < Math.min(stars, 7); i++) {
+    const isLast = i === 6 && idx === 6;
+    ctx.fillStyle = isLast ? '#fff' : rcol;
+    const sx = 4 + (i % 4) * 7;
+    const sy = isLast ? 19 : 26 - Math.floor(i / 4) * 7;
+    ctx.beginPath();
+    if (isLast) {
+      drawStar(ctx, sx, sy, 1.8, 2.5, 5);
+    } else {
+      ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fill();
+    if (!isLast) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+
+  // ---- icon with rarity-appropriate styling ----
+  ctx.fillStyle = rcol;
+  if (idx >= 5) {
+    ctx.shadowColor = rcol;
+    ctx.shadowBlur = 10;
+  } else if (idx >= 3) {
+    ctx.shadowColor = rcol;
+    ctx.shadowBlur = 5;
+  } else {
+    ctx.shadowBlur = 0;
+  }
+  ctx.font = (idx >= 5 ? '16px' : '14px') + ' "Courier New"';
+  ctx.textAlign = 'center';
+  ctx.fillText(iconChar, 16, idx >= 5 ? 19 : 18);
+  ctx.shadowBlur = 0;
+
   spriteCache[key] = c;
   return c;
+}
+
+function drawStar(ctx, cx, cy, innerR, outerR, points) {
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (i * Math.PI) / points - Math.PI / 2;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 8;
+  ctx.fill();
+  ctx.shadowBlur = 0;
 }
 
 const GACHA_POOL = {
@@ -842,6 +978,7 @@ function doGachaDraw() {
 function showGachaResult(item, rarity, scaled, sellPrice) {
   const overlay = document.getElementById('gacha-result-overlay');
   const rdata = RARITY[rarity];
+  const idx = RARITY_ORDER.indexOf(rarity);
   const statLines = [];
   if (scaled.atk) statLines.push('⚔ +' + scaled.atk + ' 攻击');
   if (scaled.def) statLines.push('🛡 +' + scaled.def + ' 防御');
@@ -851,11 +988,20 @@ function showGachaResult(item, rarity, scaled, sellPrice) {
 
   const icon = genGachaIcon(rarity, item.slot);
   const iconData = icon.toDataURL();
+  const glowSpread = 30 + idx * 15;
+  const glowStrong = 50 + idx * 25;
 
   overlay.innerHTML = `
     <div class="gacha-skip" onclick="hideGachaResult()">跳过 ✕</div>
-    <div class="gacha-result-card" style="border-color:${rdata.color};box-shadow:0 0 30px ${rdata.glow}">
-      <img src="${iconData}" class="item-icon-canvas" width="64" height="64">
+    <div class="gacha-result-card rarity-${rarity}-card" style="
+      border-color:${rdata.color};
+      --card-glow:0 0 ${glowSpread}px ${rdata.glow};
+      --card-glow-strong:0 0 ${glowStrong}px ${rdata.glow}, 0 0 ${glowStrong * 2}px ${rdata.color};
+      animation:cardAppear 0.6s ease-out, cardPulse 1.5s ease-in-out infinite 0.6s;
+    ">
+      <img src="${iconData}" class="item-icon-canvas" width="64" height="64" style="
+        ${idx >= 4 ? 'filter:drop-shadow(0 0 12px ' + rdata.color + ');' : ''}
+      ">
       <div class="rarity rarity-${rarity}">${rdata.name}</div>
       <div class="item-name" style="color:${rdata.color}">${item.name}</div>
       <div class="item-stats">${statLines.join(' &nbsp;|&nbsp; ')}</div>
@@ -865,50 +1011,124 @@ function showGachaResult(item, rarity, scaled, sellPrice) {
     </div>`;
   overlay.style.display = 'flex';
 
-  spawnResultSparkles(overlay, rdata.color);
+  spawnScreenFlash(overlay);
+  spawnBeamOfLight(overlay, rdata.color);
+  spawnResultSparkles(overlay, rdata.color, idx);
 }
 
 function hideGachaResult() {
   document.getElementById('gacha-result-overlay').style.display = 'none';
 }
 
+function spawnScreenFlash(overlay) {
+  const flash = document.createElement('div');
+  flash.className = 'gacha-flash';
+  overlay.appendChild(flash);
+  setTimeout(() => flash.remove(), 700);
+}
+
+function spawnBeamOfLight(overlay, color) {
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      const beam = document.createElement('div');
+      beam.className = 'gacha-beam';
+      beam.style.left = (40 + Math.random() * 20) + '%';
+      if (color) beam.style.background = 'linear-gradient(180deg,transparent,' + color + ',transparent)';
+      overlay.appendChild(beam);
+      setTimeout(() => beam.remove(), 900);
+    }, i * 120);
+  }
+}
+
 function spawnGachaParticles(btn) {
   const rect = btn.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  const colors = ['#f1c40f','#e74c3c','#3498db','#2ecc71','#9b59b6','#f39c12','#fff'];
-  for (let i = 0; i < 20; i++) {
+  const colors = ['#f1c40f','#e74c3c','#3498db','#2ecc71','#9b59b6','#f39c12','#fff','#ff6b6b','#ffd93d','#6bcb77'];
+  for (let i = 0; i < 45; i++) {
     const p = document.createElement('div');
     p.className = 'gacha-particle';
     p.style.left = cx + 'px';
     p.style.top = cy + 'px';
-    p.style.width = '6px';
-    p.style.height = '6px';
+    const size = 3 + Math.random() * 8;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
     p.style.background = colors[Math.floor(Math.random() * colors.length)];
-    p.style.borderRadius = '50%';
-    p.style.setProperty('--px', (Math.random() - 0.5) * 200 + 'px');
-    p.style.setProperty('--py', (Math.random() - 0.8) * 200 + 'px');
+    p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    p.style.boxShadow = '0 0 ' + (4 + Math.random() * 8) + 'px ' + p.style.background;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 80 + Math.random() * 250;
+    p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--py', Math.sin(angle) * dist - 30 + 'px');
+    p.style.animationDuration = (1 + Math.random() * 2) + 's';
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1500);
+    setTimeout(() => p.remove(), 2500);
+  }
+  // ring burst
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'gacha-particle';
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    p.style.width = '4px';
+    p.style.height = '4px';
+    p.style.background = '#FFD700';
+    p.style.borderRadius = '50%';
+    p.style.boxShadow = '0 0 10px #FFD700, 0 0 20px #f1c40f';
+    const angle = (i / 16) * Math.PI * 2;
+    const dist = 60;
+    p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+    p.style.animationDuration = '0.8s';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
   }
 }
 
-function spawnResultSparkles(overlay, color) {
+function spawnResultSparkles(overlay, color, idx) {
   const rect = overlay.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  for (let i = 0; i < 30; i++) {
+  const count = 20 + idx * 8;
+  for (let i = 0; i < count; i++) {
     const s = document.createElement('div');
-    s.className = 'gacha-sparkle';
+    s.className = 'gacha-orbit';
     s.style.left = cx + 'px';
     s.style.top = cy + 'px';
     s.style.background = color;
-    s.style.boxShadow = '0 0 6px ' + color;
-    s.style.setProperty('--sx', (Math.random() - 0.5) * 300 + 'px');
-    s.style.setProperty('--sy', (Math.random() - 0.5) * 300 + 'px');
-    s.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    s.style.boxShadow = '0 0 6px ' + color + ', 0 0 12px ' + color;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 80 + Math.random() * 200;
+    s.style.setProperty('--ox', Math.cos(angle) * dist + 'px');
+    s.style.setProperty('--oy', Math.sin(angle) * dist + 'px');
+    s.style.animationDuration = (1.5 + Math.random() * 3) + 's';
+    s.style.animationDelay = Math.random() * 0.8 + 's';
     document.body.appendChild(s);
-    setTimeout(() => s.remove(), 3500);
+    setTimeout(() => s.remove(), 4500);
+  }
+  // concentric rings
+  if (idx >= 2) {
+    for (let ring = 0; ring < Math.min(idx, 4); ring++) {
+      setTimeout(() => {
+        for (let i = 0; i < 12; i++) {
+          const s = document.createElement('div');
+          s.className = 'gacha-orbit';
+          s.style.left = cx + 'px';
+          s.style.top = cy + 'px';
+          s.style.width = '3px';
+          s.style.height = '3px';
+          s.style.background = color;
+          s.style.boxShadow = '0 0 4px ' + color;
+          const angle = (i / 12) * Math.PI * 2 + ring * 0.5;
+          const dist = 50 + ring * 30;
+          s.style.setProperty('--ox', Math.cos(angle) * dist + 'px');
+          s.style.setProperty('--oy', Math.sin(angle) * dist + 'px');
+          s.style.animationDuration = (2 + ring * 0.5) + 's';
+          document.body.appendChild(s);
+          setTimeout(() => s.remove(), 3500);
+        }
+      }, ring * 200);
+    }
   }
 }
 
